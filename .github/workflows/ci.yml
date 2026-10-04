@@ -30,6 +30,8 @@ jobs:
         run: |
           python3 plugins/repo-engineering/skills/readme-who-what-why/scripts/readme_check.py README.md
           python3 plugins/repo-engineering/skills/docs-truth-check/scripts/docs_truth_check.py . --docs README.md --docs plugins/repo-engineering/README.md --exclude tests/fixtures --only-failures
+      - name: Run the hygiene bundle on this repository (fixtures hold planted defects, so they are left out)
+        run: python3 plugins/repo-engineering/skills/repo-hygiene-bundle/scripts/hygiene.py . --exclude tests/fixtures --fail-on medium
 
   tests:
     name: Tests and lint
@@ -64,7 +66,8 @@ jobs:
           docker build --build-arg VERSION=ci -t repo-engineering-skills:ci .
           docker run --rm repo-engineering-skills:ci --help > help.txt && grep "^usage: repo-engineering <subcommand>" help.txt
           docker run --rm repo-engineering-skills:ci > /dev/null && grep -c "^  [a-z]" help.txt
-          for s in docs-truth repo-facts audit-validate context-lint readme-check test-gaps; do docker run --rm repo-engineering-skills:ci "$s" --help > /dev/null; done
+          for s in docs-truth repo-facts audit-validate context-lint readme-check test-gaps onboarding onboarding-lint restructure adr adr-lint hygiene release-notes; do docker run --rm repo-engineering-skills:ci "$s" --help > /dev/null; done
+          docker run --rm --entrypoint git repo-engineering-skills:ci --version
           docker run --rm repo-engineering-skills:ci --version
           test "$(docker run --rm --entrypoint id repo-engineering-skills:ci -u)" = "1000"
           test "$(docker run --rm --entrypoint pwd repo-engineering-skills:ci)" = "/work"
