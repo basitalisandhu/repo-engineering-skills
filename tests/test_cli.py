@@ -85,3 +85,41 @@ def test_cli_is_executable_with_a_shebang():
     assert CLI.read_text(encoding="utf-8").startswith("#!/usr/bin/env python3")
     if os.name == "posix":
         assert os.access(CLI, os.X_OK)
+
+
+NEW_IN_0_2 = {
+    "onboarding": "onboarding_facts.py",
+    "onboarding-lint": "onboarding_lint.py",
+    "restructure": "restructure_plan.py",
+    "adr": "adr_mine.py",
+    "adr-lint": "adr_lint.py",
+    "hygiene": "hygiene.py",
+    "release-notes": "release_notes_verify.py",
+}
+
+
+def test_the_0_2_subcommands_dispatch_to_their_scripts():
+    cli = load_cli()
+    for name, script in NEW_IN_0_2.items():
+        assert cli.script_path(name).name == script
+        result = run(name, "--help")
+        assert result.returncode == 0, (name, result.stderr)
+        assert f"usage: {script}" in result.stdout, name
+
+
+def test_dispatched_script_runs_on_a_fixture_and_keeps_its_exit_code():
+    fixture = ROOT / "tests" / "fixtures" / "restructure" / "repo"
+    result = run("restructure", str(fixture), "--json", "--goal", "split")
+    assert result.returncode == 0
+    assert json.loads(result.stdout)["commands"] == ["git mv app/reports/formatting.py app/api/formatting.py"]
+    assert run("restructure", str(fixture), "--fail-on-cycles").returncode == 1
+    adr = ROOT / "tests" / "fixtures" / "adr" / "docs_adr"
+    assert run("adr-lint", str(adr)).returncode == 1
+
+
+def test_hygiene_through_the_dispatcher_writes_sarif(tmp_path):
+    fixture = ROOT / "tests" / "fixtures" / "hygiene" / "repo"
+    sarif = tmp_path / "h.sarif"
+    result = run("hygiene", str(fixture), "--fail-on", "high", "--sarif", str(sarif))
+    assert result.returncode == 1
+    assert json.loads(sarif.read_text(encoding="utf-8"))["version"] == "2.1.0"

@@ -1,0 +1,8 @@
+name: ci
+on: [push]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - run: pip install -e .
+      - run: python -m pytest -q

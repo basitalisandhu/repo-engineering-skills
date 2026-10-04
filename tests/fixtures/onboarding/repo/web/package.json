@@ -1,0 +1,8 @@
+{
+  "name": "inventory-web",
+  "version": "1.4.0",
+  "scripts": {
+    "start": "vite",
+    "test": "vitest run"
+  }
+}

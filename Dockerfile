@@ -25,14 +25,21 @@ RUN set -e; for d in /tmp/skills/*/scripts; do \
 FROM ${PYTHON_IMAGE}
 ARG VERSION=0.0.0-dev
 LABEL org.opencontainers.image.title="repo-engineering-skills" \
-      org.opencontainers.image.description="Repository engineering skill scripts (docs truth check, cited audits, agent context lint, README check, test gaps) behind one command" \
+      org.opencontainers.image.description="Repository engineering skill scripts (docs truth check, cited audits, agent context lint, README check, test gaps, onboarding facts, restructure plans, ADR mining, hygiene, release notes) behind one command" \
       org.opencontainers.image.source="https://github.com/basitalisandhu/repo-engineering-skills" \
       org.opencontainers.image.url="https://github.com/basitalisandhu/repo-engineering-skills" \
       org.opencontainers.image.licenses="MIT" \
       org.opencontainers.image.version="${VERSION}"
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
 COPY --from=build /app/ /app/
-RUN ln -s /app/scripts/cli.py /usr/local/bin/repo-engineering \
+# git is needed by the adr and release-notes subcommands (read-only log, show, ls-tree, blame). The mounted
+# repository belongs to another uid, so /work is marked as a safe directory for git.
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends git \
+ && rm -rf /var/lib/apt/lists/* \
+ && git config --system --add safe.directory /work \
+ && git config --system --add safe.directory '/work/*' \
+ && ln -s /app/scripts/cli.py /usr/local/bin/repo-engineering \
  && useradd --uid 1000 --user-group --no-create-home --shell /usr/sbin/nologin app
 # Mount the files to read (and the folder for any output) at /work.
 WORKDIR /work

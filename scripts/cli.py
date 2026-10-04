@@ -15,7 +15,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-__version__ = "0.1.1"
+__version__ = "0.2.0"
 
 PROG = "repo-engineering"
 ROOT = Path(__file__).resolve().parents[1]
@@ -52,6 +52,41 @@ COMMANDS: dict[str, tuple[str, str, str]] = {
         "test-gap-finder",
         "test_gaps.py",
         "Rank public functions and entry points that no test mentions",
+    ),
+    "onboarding": (
+        "repo-onboarding-guide",
+        "onboarding_facts.py",
+        "Cited facts an onboarding guide must be written from",
+    ),
+    "onboarding-lint": (
+        "repo-onboarding-guide",
+        "onboarding_lint.py",
+        "Flag onboarding guide sentences that no fact supports",
+    ),
+    "restructure": (
+        "restructure-planner",
+        "restructure_plan.py",
+        "Import graph, cycles, coupling and a git mv plan (printed, never run)",
+    ),
+    "adr": (
+        "adr-miner",
+        "adr_mine.py",
+        "Mine git history and comments for decisions; draft MADR stubs",
+    ),
+    "adr-lint": (
+        "adr-miner",
+        "adr_lint.py",
+        "Check an ADR folder for numbering gaps, status and supersession links",
+    ),
+    "hygiene": (
+        "repo-hygiene-bundle",
+        "hygiene.py",
+        "Offline hygiene checks with severities, SARIF and a CI exit code",
+    ),
+    "release-notes": (
+        "release-notes-verifier",
+        "release_notes_verify.py",
+        "Compare release notes with the commits between two tags",
     ),
 }
 

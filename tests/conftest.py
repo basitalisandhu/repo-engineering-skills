@@ -65,3 +65,46 @@ def fixture_copy(tmp_path: Path):
         shutil.copytree(FIXTURES / rel, dest)
         return dest
     return _copy
+
+
+GIT_ENV_BASE = {"GIT_CONFIG_NOSYSTEM": "1", "GIT_TERMINAL_PROMPT": "0"}
+
+
+def git_commit(repo: Path, message: str, files: dict[str, str | None], date: str = "2026-01-01T12:00:00",
+               author: str = "Ada Example") -> str:
+    """Write (or delete, for None) files in repo, commit them with a fixed author and date, return the SHA.
+
+    Creates the repository on first use. Signing is off and global config is ignored so the test machine's own
+    git settings cannot change the result.
+    """
+    import os
+    import subprocess
+
+    env = {**os.environ, **GIT_ENV_BASE, "HOME": str(repo.parent), "GIT_AUTHOR_NAME": author,
+           "GIT_AUTHOR_EMAIL": "ada@example.com", "GIT_COMMITTER_NAME": author,
+           "GIT_COMMITTER_EMAIL": "ada@example.com", "GIT_AUTHOR_DATE": date, "GIT_COMMITTER_DATE": date}
+
+    def git(*args: str) -> str:
+        return subprocess.run(["git", "-c", "commit.gpgsign=false", "-c", "tag.gpgsign=false", "-c",
+                               "init.defaultBranch=main", *args], cwd=repo, env=env, check=True,
+                              capture_output=True, text=True).stdout
+
+    if not (repo / ".git").exists():
+        repo.mkdir(parents=True, exist_ok=True)
+        git("init", "-q")
+    for rel, content in files.items():
+        path = repo / rel
+        if content is None:
+            git("rm", "-q", rel)
+            continue
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(content, encoding="utf-8")
+        git("add", rel)
+    git("commit", "-q", "--allow-empty", "-m", message)
+    return git("rev-parse", "HEAD").strip()
+
+
+def git_tag(repo: Path, name: str) -> None:
+    import subprocess
+
+    subprocess.run(["git", "-c", "tag.gpgsign=false", "tag", name], cwd=repo, check=True, capture_output=True)
