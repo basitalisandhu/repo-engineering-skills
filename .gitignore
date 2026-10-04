@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+
+# Local output from the skill scripts
+docs-truth.json
+audit-facts.json
+audit-report*.json
+
+# Editors and OS
+.DS_Store
+.idea/
+.vscode/

@@ -1,0 +1,9 @@
+[project]
+name = "calc"
+version = "0.1.0"
+
+[project.scripts]
+calc = "calc.cli:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

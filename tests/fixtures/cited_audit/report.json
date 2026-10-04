@@ -1,0 +1,59 @@
+{
+  "repo": "shop",
+  "findings": [
+    {
+      "id": "F1",
+      "category": "dependency-hygiene",
+      "severity": "medium",
+      "title": "requests is not pinned",
+      "citations": [{"path": "requirements.txt", "line": 1, "snippet": "requests"}],
+      "falsify": "pip install -r requirements.txt twice on different days and diff pip freeze"
+    },
+    {
+      "id": "F2",
+      "category": "ci-health",
+      "severity": "high",
+      "title": "CI ignores test failures",
+      "location": ".github/workflows/ci.yml:9",
+      "snippet": "run:   pytest -q || true"
+    },
+    {
+      "id": "F3",
+      "category": "dead-code",
+      "severity": "low",
+      "title": "legacy_export is never called (planted wrong line)",
+      "citations": [{"path": "shop/orders.py", "line": 3, "snippet": "def legacy_export(orders):"}]
+    },
+    {
+      "id": "F4",
+      "category": "test-coverage",
+      "severity": "medium",
+      "title": "apply_discount has no test (planted missing file)",
+      "citations": [{"path": "shop/discounts.py", "line": 1, "snippet": "def apply_discount"}]
+    },
+    {
+      "id": "F5",
+      "category": "secrets-config",
+      "severity": "low",
+      "title": "Database URL falls back to a local file (planted line out of range)",
+      "citations": [{"path": "shop/orders.py", "line": 400, "snippet": "SHOP_DB_URL"}]
+    },
+    {
+      "id": "F6",
+      "category": "structure",
+      "severity": "info",
+      "title": "Citation escapes the repository (planted)",
+      "citations": [{"path": "../outside.txt", "line": 1, "snippet": "x"}]
+    },
+    {
+      "id": "F7",
+      "category": "entry-points",
+      "severity": "info",
+      "title": "No citation at all (planted)"
+    }
+  ],
+  "considered_and_rejected": [
+    {"title": "flask is outdated", "reason": "no network check was run, so the version age is unverified"}
+  ],
+  "not_examined": ["runtime behaviour", "performance"]
+}

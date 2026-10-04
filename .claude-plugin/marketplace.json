@@ -1,0 +1,30 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "repo-engineering-skills",
+  "description": "Claude Code skills for repository audits and documentation: docs checked against the code, audits whose findings must cite a resolvable line, agent context files that hold only what code cannot say, README first-screen checks and test gap ranking.",
+  "owner": {
+    "name": "Muhammad Basit Ali",
+    "url": "https://github.com/basitalisandhu"
+  },
+  "metadata": {
+    "version": "0.1.0"
+  },
+  "plugins": [
+    {
+      "name": "repo-engineering",
+      "source": "./plugins/repo-engineering",
+      "description": "Five skills, each with a tested standard-library script: docs-truth-check, cited-codebase-audit, agent-context-writer, readme-who-what-why and test-gap-finder.",
+      "version": "0.1.0",
+      "author": {
+        "name": "Muhammad Basit Ali",
+        "url": "https://github.com/basitalisandhu"
+      },
+      "homepage": "https://github.com/basitalisandhu/repo-engineering-skills",
+      "repository": "https://github.com/basitalisandhu/repo-engineering-skills",
+      "license": "MIT",
+      "keywords": ["documentation", "docs-drift", "codebase-audit", "agents-md", "claude-md", "readme", "test-gaps"],
+      "category": "development",
+      "tags": ["documentation", "audit", "repository", "testing"]
+    }
+  ]
+}
