@@ -221,6 +221,22 @@ class Index:
         except (SyntaxError, ValueError):
             return
         info = ScriptInfo(kind="python")
+        os_module_names = {"os"}
+        environ_names: set[str] = set()
+        getenv_names: set[str] = set()
+        for imported in tree.body:
+            if isinstance(imported, ast.Import):
+                os_module_names.update(
+                    alias.asname or alias.name
+                    for alias in imported.names
+                    if alias.name == "os"
+                )
+            elif isinstance(imported, ast.ImportFrom) and imported.module == "os":
+                for alias in imported.names:
+                    if alias.name == "environ":
+                        environ_names.add(alias.asname or alias.name)
+                    elif alias.name == "getenv":
+                        getenv_names.add(alias.asname or alias.name)
         for node in tree.body:
             if isinstance(node, ast.Assign):
                 for t in node.targets:
@@ -250,15 +266,24 @@ class Index:
                     and isinstance(fn.value, ast.Attribute)
                     and fn.value.attr == "environ"
                     and isinstance(fn.value.value, ast.Name)
-                    and fn.value.value.id == "os"
+                    and fn.value.value.id in os_module_names
+                ):
+                    env_name = node.args[0].value if node.args and isinstance(node.args[0], ast.Constant) else None
+                elif (
+                    isinstance(fn, ast.Attribute)
+                    and fn.attr == "get"
+                    and isinstance(fn.value, ast.Name)
+                    and fn.value.id in environ_names
                 ):
                     env_name = node.args[0].value if node.args and isinstance(node.args[0], ast.Constant) else None
                 elif (
                     isinstance(fn, ast.Attribute)
                     and fn.attr == "getenv"
                     and isinstance(fn.value, ast.Name)
-                    and fn.value.id == "os"
+                    and fn.value.id in os_module_names
                 ):
+                    env_name = node.args[0].value if node.args and isinstance(node.args[0], ast.Constant) else None
+                elif isinstance(fn, ast.Name) and fn.id in getenv_names:
                     env_name = node.args[0].value if node.args and isinstance(node.args[0], ast.Constant) else None
                 if isinstance(env_name, str) and len(node.args) > 1:
                     try:

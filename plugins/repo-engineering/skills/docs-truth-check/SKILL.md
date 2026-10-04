@@ -67,7 +67,7 @@ Exit codes: 0 no drift, 1 drift at the `--fail-on` level, 2 bad input.
 | `path` | backticks, the script a command runs | the file or directory exists; a bare file name may be anywhere in the tree |
 | `link` | relative Markdown links and images | the target exists |
 | `flag` | `--flag` in a shell code block or in backticks | the script's `argparse` or `click` declarations (Python, by `ast`), or its source text (shell, JS), declare it |
-| `default` | "`--flag` defaults to `X`", "`ENV_NAME` defaults to `X`", "(default: X)" | the code's literal CLI or `os.environ.get` / `os.getenv` default equals X; non-literal environment defaults are unverified |
+| `default` | "`--flag` defaults to `X`", "`ENV_NAME` defaults to `X`", "(default: X)" | the code's literal CLI or environment lookup default equals X, including `os.environ.get`, `os.getenv`, or their direct imports from `os`; non-literal environment defaults are unverified |
 | `env` | `UPPER_CASE_NAME` in backticks | the name appears in a code or config file |
 | `symbol` | `name()`, `Class.method`, `snake_case`, `camelCase` in backticks | defined in Python (`ast`), exported or declared in JS/TS (regex), or a key in TOML, JSON, YAML, INI or `.env` files |
 | `version` | `<project>==X.Y.Z`, `<project>@X.Y.Z`, "version X.Y.Z" on a line naming the project | equals the version in `pyproject.toml` or `package.json` |

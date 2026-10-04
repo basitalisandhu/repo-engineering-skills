@@ -67,6 +67,27 @@ def test_environment_defaults_compare_literal_get_and_getenv_values(tmp_path):
     assert ("APP_MODE default safe", "unverified") in statuses
 
 
+def test_environment_defaults_detect_from_os_imports(tmp_path):
+    (tmp_path / "settings.py").write_text(
+        "from os import environ, getenv\n"
+        'APP_LANGUAGE = environ.get("APP_LANGUAGE", "en")\n'
+        'APP_REGION = getenv("APP_REGION", "global")\n'
+        "from os import environ as settings, getenv as read_env\n"
+        'APP_MODE = settings.get("APP_MODE", "safe")\n'
+        'APP_STAGE = read_env("APP_STAGE", "prod")\n'
+    )
+    (tmp_path / "README.md").write_text(
+        "APP_LANGUAGE defaults to `en`.\nAPP_REGION defaults to `global`.\n"
+        "APP_MODE defaults to `safe`.\nAPP_STAGE defaults to `prod`.\n"
+    )
+    _, rep = run_json(mod, [str(tmp_path), "--json"])
+    statuses = {(claim["claim"], claim["status"]) for claim in rep["claims"] if claim["kind"] == "default"}
+    assert ("APP_LANGUAGE default en", "verified") in statuses
+    assert ("APP_REGION default global", "verified") in statuses
+    assert ("APP_MODE default safe", "verified") in statuses
+    assert ("APP_STAGE default prod", "verified") in statuses
+
+
 def test_fixing_the_docs_makes_the_gate_pass(fixture_copy):
     repo = fixture_copy("docs_truth/sample_repo")
     readme = repo / "README.md"

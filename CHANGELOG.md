@@ -4,6 +4,10 @@ All notable changes to this project are documented here. The format follows Keep
 
 ## [Unreleased]
 
+### Changed
+
+- `docs-truth-check` also verifies environment defaults read through `from os import environ, getenv`, including aliased imports (#13, thanks @harshit3355).
+
 ## [0.2.0] - 2026-10-05
 
 Five new skills, each with a standard-library script, a planted-defect fixture and tests, and seven new dispatcher subcommands. The container image now includes git for the two history-based skills.
