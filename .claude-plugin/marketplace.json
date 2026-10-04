@@ -7,14 +7,14 @@
     "url": "https://github.com/basitalisandhu"
   },
   "metadata": {
-    "version": "0.1.0"
+    "version": "0.1.1"
   },
   "plugins": [
     {
       "name": "repo-engineering",
       "source": "./plugins/repo-engineering",
       "description": "Five skills, each with a tested standard-library script: docs-truth-check, cited-codebase-audit, agent-context-writer, readme-who-what-why and test-gap-finder.",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "author": {
         "name": "Muhammad Basit Ali",
         "url": "https://github.com/basitalisandhu"
