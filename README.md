@@ -35,6 +35,8 @@ docker run --rm -v "$PWD:/work" ghcr.io/basitalisandhu/repo-engineering-skills:0
 docker run --rm ghcr.io/basitalisandhu/repo-engineering-skills:0.3.0 --help
 ```
 
+This pack is also part of [claude-skills](https://github.com/basitalisandhu/claude-skills), which holds every skill I maintain as one marketplace: `/plugin marketplace add basitalisandhu/claude-skills`.
+
 | Subcommand | Script (skill) |
 |---|---|
 | `docs-truth` | `docs_truth_check.py` (docs-truth-check) |
@@ -175,6 +177,7 @@ Yes. Each script is a standalone standard-library Python program with exit code 
 |---|---|
 | [claude-dev-skills](https://github.com/basitalisandhu/claude-dev-skills) | Claude Code skills for everyday development: code review, refactoring, debugging, CI and containers, data and APIs, docs and security basics |
 | [agent-security-skills](https://github.com/basitalisandhu/agent-security-skills) | Claude Code plugin for securing LLM agents: threat modelling, config audits, prompt injection review, MCP server review |
+| [Combined repository and catalog of agent skills](https://github.com/basitalisandhu/claude-skills) | All packs in one repository; this plugin's pages are at https://basitalisandhu.github.io/claude-skills/plugins/repo-engineering/ |
 
 More from the author: [github.com/basitalisandhu](https://github.com/basitalisandhu).
 
