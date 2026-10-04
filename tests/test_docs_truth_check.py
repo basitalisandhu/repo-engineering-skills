@@ -6,6 +6,7 @@ REPO = FIXTURES / "docs_truth" / "sample_repo"
 PLANTED = {
     ("version", "greeter 1.1.0", "stale"),
     ("default", "--retries default 3", "stale"),
+    ("default", "GREETER_LANG default es", "stale"),
     ("flag", "--color (src/greeter/cli.py)", "missing"),
     ("path", "src/greeter/helpers.py", "missing"),
     ("symbol", "format_name()", "missing"),
@@ -50,11 +51,29 @@ def test_wrong_default_reports_the_code_value():
     assert "5" in stale["detail"] and stale["location"].startswith("README.md:")
 
 
+def test_environment_defaults_compare_literal_get_and_getenv_values(tmp_path):
+    (tmp_path / "settings.py").write_text(
+        'import os\nAPP_LANGUAGE = os.environ.get("APP_LANGUAGE", "en")\n'
+        'APP_REGION = os.getenv("APP_REGION", "global")\n'
+        'APP_MODE = os.getenv("APP_MODE", configured_mode)\n'
+    )
+    (tmp_path / "README.md").write_text(
+        "APP_LANGUAGE defaults to `en`.\nAPP_REGION defaults to `global`.\nAPP_MODE defaults to `safe`.\n"
+    )
+    _, rep = run_json(mod, [str(tmp_path), "--json"])
+    statuses = {(c["claim"], c["status"]) for c in rep["claims"] if c["kind"] == "default"}
+    assert ("APP_LANGUAGE default en", "verified") in statuses
+    assert ("APP_REGION default global", "verified") in statuses
+    assert ("APP_MODE default safe", "unverified") in statuses
+
+
 def test_fixing_the_docs_makes_the_gate_pass(fixture_copy):
     repo = fixture_copy("docs_truth/sample_repo")
     readme = repo / "README.md"
     text = readme.read_text()
-    text = text.replace("greeter==1.1.0", "greeter==1.2.0").replace("defaults to `3`", "defaults to `5`")
+    text = (text.replace("greeter==1.1.0", "greeter==1.2.0")
+            .replace("defaults to `3`", "defaults to `5`")
+            .replace("`GREETER_LANG` defaults to `es`", "`GREETER_LANG` defaults to `en`"))
     text = text.replace(" --color red", "").replace("src/greeter/helpers.py", "src/greeter/utils.py")
     text = text.replace("call `format_name()`", "call `normalise_name()`")
     text = text.replace(" and the [old guide](docs/guide.md)", "")

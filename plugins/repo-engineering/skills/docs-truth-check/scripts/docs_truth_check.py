@@ -5,7 +5,7 @@ Claim kinds, and what counts as verified:
   path     a file or directory in backticks, or the script a documented command runs: it exists
   link     a relative Markdown link or image: the target exists
   flag     a --flag in a documented command or in backticks: the script (or any parser in the repo) declares it
-  default  "--flag ... defaults to X" or "(default: X)": the parser's literal default equals X
+  default  a documented CLI or environment-variable default equals its literal code default
   env      an ENVIRONMENT_VARIABLE in backticks: it is named in at least one non-documentation file
   symbol   a function, class, dotted name or config key in backticks: it is defined in code or config
   version  "<project>==X.Y.Z", "<project>@X.Y.Z", "<project> vX.Y.Z", or a line naming the project and
@@ -56,6 +56,7 @@ STATUSES = ("verified", "missing", "stale", "unverified")
 
 FLAG_RE = re.compile(r"(?<![\w-])(--[A-Za-z0-9][A-Za-z0-9_-]*)")
 ENV_RE = re.compile(r"^\$?\{?([A-Z][A-Z0-9]*_[A-Z0-9_]*[A-Z0-9])\}?$")
+ENV_NAME_RE = re.compile(r"(?<![A-Za-z0-9_])([A-Z][A-Z0-9]*_[A-Z0-9_]*[A-Z0-9])(?![A-Za-z0-9_])")
 IDENT_RE = re.compile(r"^([A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*)(\([^()]*\))?$")
 SPAN_RE = re.compile(r"(?<!`)`([^`\n]+)`(?!`)")
 LINK_RE = re.compile(r"\]\(\s*<?([^)\s>]+)>?(?:\s+\"[^\"]*\")?\s*\)")
@@ -154,6 +155,7 @@ class Index:
         self.scripts: dict[str, ScriptInfo] = {}
         self.all_flags: set[str] = set()
         self.flag_defaults: dict[str, list[tuple[str, object]]] = {}
+        self.env_defaults: dict[str, list[tuple[str, object]]] = {}
         self.code_texts: dict[str, str] = {}
         self.pyproject: dict = {}
         self.package_json: dict = {}
@@ -241,6 +243,30 @@ class Index:
                         members.add(item.target.id)
             elif isinstance(node, ast.Call):
                 fn = node.func
+                env_name = None
+                if (
+                    isinstance(fn, ast.Attribute)
+                    and fn.attr == "get"
+                    and isinstance(fn.value, ast.Attribute)
+                    and fn.value.attr == "environ"
+                    and isinstance(fn.value.value, ast.Name)
+                    and fn.value.value.id == "os"
+                ):
+                    env_name = node.args[0].value if node.args and isinstance(node.args[0], ast.Constant) else None
+                elif (
+                    isinstance(fn, ast.Attribute)
+                    and fn.attr == "getenv"
+                    and isinstance(fn.value, ast.Name)
+                    and fn.value.id == "os"
+                ):
+                    env_name = node.args[0].value if node.args and isinstance(node.args[0], ast.Constant) else None
+                if isinstance(env_name, str) and len(node.args) > 1:
+                    try:
+                        env_default = ast.literal_eval(node.args[1])
+                    except (ValueError, SyntaxError, TypeError):
+                        env_default = UNKNOWN
+                    self.env_defaults.setdefault(env_name, []).append((rel, env_default))
+
                 name = fn.attr if isinstance(fn, ast.Attribute) else fn.id if isinstance(fn, ast.Name) else ""
                 if name not in {"add_argument", "option"}:
                     continue
@@ -778,6 +804,31 @@ class Checker:
             else:
                 rel, d = known[0]
                 self.add("default", claim, doc, lineno, "stale", f"code default is {d!r} in {rel}")
+
+        for match in ENV_NAME_RE.finditer(line):
+            name = match.group(1)
+            window = re.split(r"(?<=[.!?])\s", line[match.end():match.end() + 100])[0]
+            dm = DEFAULT_RE.search(window)
+            if not dm:
+                continue
+            claimed = dm.group(1)
+            if claimed.lower() in {"value", "is", "to", "of", "the", "a", "an"}:
+                continue
+            defs = self.index.env_defaults.get(name, [])
+            if not defs:
+                continue
+            claim = f"{name} default {claimed}"
+            if any(default is UNKNOWN for _, default in defs):
+                self.add("default", claim, doc, lineno, "unverified", "at least one code default is not a literal")
+                continue
+            values = {norm_value(default) for _, default in defs}
+            if len(values) > 1:
+                self.add("default", claim, doc, lineno, "unverified", "code declares multiple defaults")
+            elif next(iter(values)) == norm_claimed(claimed):
+                self.add("default", claim, doc, lineno, "verified")
+            else:
+                rel, default = defs[0]
+                self.add("default", claim, doc, lineno, "stale", f"code default is {default!r} in {rel}")
 
     def check_versions(self, line: str, doc: str, lineno: int) -> None:
         if not self.version or not self.name:

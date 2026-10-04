@@ -4,6 +4,10 @@ All notable changes to this project are documented here. The format follows Keep
 
 ## [Unreleased]
 
+### Added
+
+- `docs-truth-check` verifies documented environment-variable defaults when Python uses a literal `os.environ.get` or `os.getenv` default and reports dynamic defaults as unverified.
+
 ## [0.1.0] - 2026-10-04
 
 ### Added
