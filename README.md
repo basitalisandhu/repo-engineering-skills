@@ -28,11 +28,11 @@ Generated from the committed fixtures by [`scripts/render_demo.py`](scripts/rend
 The plugin installs as shown above. The skill scripts are also published as one container image on GitHub Packages (linux/amd64 and linux/arm64) for running them without a checkout, for example in CI. The image's entrypoint is `repo-engineering <subcommand> [args]`; mount the files to read at `/work`, which is the working directory:
 
 ```bash
-docker run --rm -v "$PWD:/work" ghcr.io/basitalisandhu/repo-engineering-skills:0.2.0 docs-truth /work --only-failures
-docker run --rm -v "$PWD:/work" ghcr.io/basitalisandhu/repo-engineering-skills:0.2.0 readme-check /work/README.md
-docker run --rm -v "$PWD:/work" ghcr.io/basitalisandhu/repo-engineering-skills:0.2.0 test-gaps /work --top 20
-docker run --rm -v "$PWD:/work" ghcr.io/basitalisandhu/repo-engineering-skills:0.2.0 hygiene /work --sarif /work/hygiene.sarif
-docker run --rm ghcr.io/basitalisandhu/repo-engineering-skills:0.2.0 --help
+docker run --rm -v "$PWD:/work" ghcr.io/basitalisandhu/repo-engineering-skills:0.3.0 docs-truth /work --only-failures
+docker run --rm -v "$PWD:/work" ghcr.io/basitalisandhu/repo-engineering-skills:0.3.0 readme-check /work/README.md
+docker run --rm -v "$PWD:/work" ghcr.io/basitalisandhu/repo-engineering-skills:0.3.0 test-gaps /work --top 20
+docker run --rm -v "$PWD:/work" ghcr.io/basitalisandhu/repo-engineering-skills:0.3.0 hygiene /work --sarif /work/hygiene.sarif
+docker run --rm ghcr.io/basitalisandhu/repo-engineering-skills:0.3.0 --help
 ```
 
 | Subcommand | Script (skill) |
@@ -42,7 +42,7 @@ docker run --rm ghcr.io/basitalisandhu/repo-engineering-skills:0.2.0 --help
 | `audit-validate` | `audit_validate.py` (cited-codebase-audit) |
 | `context-lint` | `context_lint.py` (agent-context-writer) |
 | `readme-check` | `readme_check.py` (readme-who-what-why) |
-| `test-gaps` | `test_gaps.py` (test-gap-finder) |
+| `test-gaps` | `test_gaps.py` (untested-entry-points) |
 | `onboarding` | `onboarding_facts.py` (repo-onboarding-guide) |
 | `onboarding-lint` | `onboarding_lint.py` (repo-onboarding-guide) |
 | `restructure` | `restructure_plan.py` (restructure-planner) |
@@ -56,10 +56,10 @@ Every subcommand passes its arguments to the script unchanged, so `repo-engineer
 Each image is signed with cosign (keyless) and has a build provenance attestation and an SPDX SBOM (attached to the GitHub Release). To verify:
 
 ```bash
-cosign verify ghcr.io/basitalisandhu/repo-engineering-skills:0.2.0 \
+cosign verify ghcr.io/basitalisandhu/repo-engineering-skills:0.3.0 \
   --certificate-identity-regexp '^https://github.com/basitalisandhu/repo-engineering-skills/' \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com
-gh attestation verify oci://ghcr.io/basitalisandhu/repo-engineering-skills:0.2.0 --owner basitalisandhu
+gh attestation verify oci://ghcr.io/basitalisandhu/repo-engineering-skills:0.3.0 --owner basitalisandhu
 ```
 
 ## When to use this
@@ -68,7 +68,7 @@ gh attestation verify oci://ghcr.io/basitalisandhu/repo-engineering-skills:0.2.0
 - Audit a codebase so that every finding can be opened and checked: `cited-codebase-audit`
 - Write an AGENTS.md or CLAUDE.md that does not repeat package.json, or shrink one that does: `agent-context-writer`
 - Does the README say what this is, who it is for, why it exists, how to install and try it, and where to ask, in its first screen? `readme-who-what-why`
-- Which public functions and CLI entry points does no test mention, and what characterisation tests should pin them before a refactor? `test-gap-finder`
+- Which public functions and CLI entry points does no test mention, and what characterisation tests should pin them before a refactor? `untested-entry-points`
 - Write an onboarding guide in which every command, path, variable, service and owner traces to a cited fact: `repo-onboarding-guide`
 - Split a package, merge two, or fix module boundaries from the real import graph, with `git mv` commands you review first: `restructure-planner`
 - Why did we switch to X? Draft decision records from commits, config changes and comments, and lint the ADR folder: `adr-miner`
@@ -83,7 +83,7 @@ gh attestation verify oci://ghcr.io/basitalisandhu/repo-engineering-skills:0.2.0
 | `cited-codebase-audit` | "audit this repo", repo health, taking over a codebase | `repo_facts.py`, `audit_validate.py` | a deterministic inventory, then a checklist audit whose findings each cite `path:line` with a quoted snippet; the validator rejects citations that do not resolve and prints acceptance stats |
 | `agent-context-writer` | write, update or shorten AGENTS.md or CLAUDE.md | `context_lint.py` | a short context file of non-inferable knowledge, linted for restated manifest commands, dependency lists, pinned runtimes, directory trees, missing paths, generic advice and length |
 | `readme-who-what-why` | review or improve a README, before a launch | `readme_check.py` | a score out of 12 for six first-screen answers, hype words with line numbers, and a to-do list |
-| `test-gap-finder` | "what is untested?", characterisation tests before a refactor | `test_gaps.py` | untested public functions and entry points ranked by entry point, size and fan-in; skipped or todo test stubs in pytest, unittest, jest, vitest or node:test |
+| `untested-entry-points` | "what is untested?", characterisation tests before a refactor | `test_gaps.py` | untested public functions and entry points ranked by entry point, size and fan-in; skipped or todo test stubs in pytest, unittest, jest, vitest or node:test |
 | `repo-onboarding-guide` | "write an onboarding doc", "how do I get started here?" | `onboarding_facts.py`, `onboarding_lint.py` | facts with a `path:line` citation each (entry points, run and test commands, directory map, env vars and services, test locations, CODEOWNERS); a guide written only from them, linted so any sentence without a matching fact is flagged, then checked with `docs-truth-check` |
 | `restructure-planner` | "split this package", "break this cycle", "where are the boundaries?" | `restructure_plan.py` | Python (`ast`) and JS/TS (regex) import graph: coupling, cycles, wide importers, god modules, and a move table (file, from, to, reason, blast radius) with `git mv` commands that are printed, never run |
 | `adr-miner` | "why did we switch to X?", "backfill our ADRs", "check our ADR folder" | `adr_mine.py`, `adr_lint.py` | decision candidates from commit messages, dependency and Dockerfile changes and rationale comments, drafted as MADR stubs citing the commit SHA; ADR folder lint for gaps, duplicates, status and superseded links |
@@ -96,7 +96,7 @@ Every script reads files (and, for the history-based skills, runs read-only git 
 
 - **Asking the model to review docs or audit code** gives prose you then have to verify. Here the verification is a script with a fixed rule set, and anything it cannot decide is labelled `unverified` rather than guessed.
 - **Anthropic's official plugins** cover neighbouring ground: `claude-md-management` maintains CLAUDE.md, `code-review` and `pr-review-toolkit` review changes, `claude-security` scans for vulnerabilities, `code-modernization` plans legacy rewrites. This plugin does not repeat them. `agent-context-writer` adds one mechanical rule (no line a parser could have produced) with a lint; `cited-codebase-audit` is a whole-repository hygiene audit, not a diff review or a vulnerability scan. `restructure-planner` plans file moves from the import graph and stops at the `git mv` commands; it does not rewrite code or prove equivalence the way `code-modernization` aims to. `repo-hygiene-bundle` checks what sits around the code (lockfiles, licence fields, workflow pinning and permissions, secret-shaped strings) and leaves vulnerability analysis of the code itself to `claude-security`.
-- **The sibling [claude-dev-skills](https://github.com/basitalisandhu/claude-dev-skills)** has a `readme-author` that writes READMEs and a module-level test gap finder. Here `readme-who-what-why` scores an existing first screen, and `test-gap-finder` works per function and entry point and writes characterisation stubs.
+- **The sibling [claude-dev-skills](https://github.com/basitalisandhu/claude-dev-skills)** has a `readme-author` that writes READMEs and a module-level test gap finder. Here `readme-who-what-why` scores an existing first screen, and `untested-entry-points` works per function and entry point and writes characterisation stubs.
 
 ## What is inside
 

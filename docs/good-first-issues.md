@@ -59,9 +59,9 @@ To claim one, open an issue with the title below (or comment on the existing one
 - `tests/fixtures/readme/good_README.rst` scores 12 of 12; a test asserts it.
 - The "Limits" section of `SKILL.md` is updated.
 
-## 6. test-gap-finder: list public methods of public classes
+## 6. untested-entry-points: list public methods of public classes
 
-**Labels:** good first issue, test-gap-finder, python
+**Labels:** good first issue, untested-entry-points, python
 
 **Context.** `test_gaps.py` treats a Python class as one unit. A class with ten public methods and one tested method looks fully tested.
 

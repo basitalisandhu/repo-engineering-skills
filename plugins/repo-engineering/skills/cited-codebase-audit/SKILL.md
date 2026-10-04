@@ -115,5 +115,5 @@ Warnings (not rejections) flag a category outside the checklist, an unknown seve
 
 ## Related
 
-- `test-gap-finder` for the function-level view behind the `test-coverage` category.
+- `untested-entry-points` for the function-level view behind the `test-coverage` category.
 - `docs-truth-check` when the audit should include documentation drift.

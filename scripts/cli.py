@@ -15,7 +15,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 
 PROG = "repo-engineering"
 ROOT = Path(__file__).resolve().parents[1]
@@ -49,7 +49,7 @@ COMMANDS: dict[str, tuple[str, str, str]] = {
         "Score whether a README first screen answers what, who and why",
     ),
     "test-gaps": (
-        "test-gap-finder",
+        "untested-entry-points",
         "test_gaps.py",
         "Rank public functions and entry points that no test mentions",
     ),

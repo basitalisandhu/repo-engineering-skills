@@ -2,7 +2,7 @@ import ast
 
 from conftest import FIXTURES, load_script, run_json, run_main
 
-mod = load_script("test-gap-finder", "test_gaps.py")
+mod = load_script("untested-entry-points", "test_gaps.py")
 REPO = FIXTURES / "test_gaps" / "project"
 
 
