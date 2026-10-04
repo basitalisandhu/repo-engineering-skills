@@ -51,6 +51,24 @@ jobs:
       - run: ruff check .
       - run: python3 -m pytest -q
 
+  container-build:
+    name: Build the container image and run it
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Build the image, print --help, run each subcommand's --help and check the user
+        run: |
+          docker build --build-arg VERSION=ci -t repo-engineering-skills:ci .
+          docker run --rm repo-engineering-skills:ci --help > help.txt && grep "^usage: repo-engineering <subcommand>" help.txt
+          docker run --rm repo-engineering-skills:ci > /dev/null && grep -c "^  [a-z]" help.txt
+          for s in docs-truth repo-facts audit-validate context-lint readme-check test-gaps; do docker run --rm repo-engineering-skills:ci "$s" --help > /dev/null; done
+          docker run --rm repo-engineering-skills:ci --version
+          test "$(docker run --rm --entrypoint id repo-engineering-skills:ci -u)" = "1000"
+          test "$(docker run --rm --entrypoint pwd repo-engineering-skills:ci)" = "/work"
+
   claude-plugin-validate:
     name: claude plugin validate --strict
     runs-on: ubuntu-latest
