@@ -10,6 +10,9 @@ venv/
 docs-truth.json
 audit-facts.json
 audit-report*.json
+onboarding-facts.json
+restructure-plan.json
+hygiene.sarif
 
 # Editors and OS
 .DS_Store

@@ -69,3 +69,67 @@ To claim one, open an issue with the title below (or comment on the existing one
 - A `--methods` flag adds each public method of a public class as a unit named `Class.method`, tested when a test file mentions the method name.
 - The default output is unchanged without the flag.
 - A fixture class with one tested and one untested method; a test asserts only the untested one is listed with `--methods`.
+
+## 7. repo-onboarding-guide: read commands from a justfile recipe body and `tox.ini`
+
+**Labels:** good first issue, repo-onboarding-guide, python
+
+**Context.** `onboarding_facts.py` records justfile and Makefile target names, and pytest configuration from `pyproject.toml`, but not `[tox]` environments or `[testenv] commands` in `tox.ini`, so a guide that says "run `tox -e py311`" is flagged as unsupported.
+
+**Acceptance criteria.**
+- Parse `tox.ini` with `configparser`: each `[testenv:<name>]` section becomes a `test_command` fact `tox -e <name>` citing the section's line.
+- `tox` alone is accepted when an `envlist` is declared.
+- A fixture `tox.ini` and a test that lints a guide line using `tox -e lint` without a finding.
+
+## 8. repo-onboarding-guide: resolve TypeScript path aliases in the facts' directory map
+
+**Labels:** good first issue, repo-onboarding-guide, typescript
+
+**Context.** A guide may say "shared UI lives in `@/components`". The alias is defined in `tsconfig.json` `compilerOptions.paths`, which the facts script does not read, so the lint flags a true sentence.
+
+**Acceptance criteria.**
+- Read `compilerOptions.paths` from a root `tsconfig.json` (JSON with comments stripped) and add each alias and its target directory as terms of a `directory` fact.
+- A test with `"@/*": ["src/*"]` where `@/components` is supported and `@/nothing` is not.
+
+## 9. restructure-planner: resolve `tsconfig.json` path aliases in the import graph
+
+**Labels:** good first issue, restructure-planner, typescript
+
+**Context.** `restructure_plan.py` treats `import x from "@/lib/date"` as an external package, so files reached through an alias have no edges and never appear in cycles or moves.
+
+**Acceptance criteria.**
+- Read `compilerOptions.baseUrl` and `paths` from the nearest `tsconfig.json` and resolve matching specifiers like relative ones.
+- A fixture with an alias cycle (`@/a` imports `@/b`, `@/b` imports `@/a`) that is reported under `cycles`.
+- The `Limits` section of `SKILL.md` drops the alias line.
+
+## 10. adr-miner: read the Nygard ADR layout and `adr-tools` supersession lines
+
+**Labels:** good first issue, adr-miner, python
+
+**Context.** Folders created with `adr-tools` write `Superseded by [2. Use X](0002-use-x.md)` under a `## Status` heading and `Supersedes [1. ...]` in the newer record. `adr_lint.py` reads the status, but the back-reference check only looks for the file name or the number.
+
+**Acceptance criteria.**
+- Treat a `Supersedes` or `Superseded by` link to an existing ADR as the back-reference, whatever its link text.
+- A fixture pair in `adr-tools` style that passes, and one where the newer record lacks `Supersedes` that still warns with `ADR-BACKLINK`.
+
+## 11. repo-hygiene-bundle: pnpm and yarn lockfile drift
+
+**Labels:** good first issue, repo-hygiene-bundle, javascript
+
+**Context.** `hygiene.py` checks drift for `package-lock.json`, `poetry.lock`, `uv.lock` and `pdm.lock`. For `pnpm-lock.yaml` and `yarn.lock` it only checks that the file exists.
+
+**Acceptance criteria.**
+- For `pnpm-lock.yaml`, read the `importers` section's dependency names with a line-based parser (no YAML library) and flag package.json dependencies missing from it as `HYG-LOCKDRIFT`.
+- For `yarn.lock`, flag package.json dependencies with no `"name@` entry.
+- One fixture per format with one planted missing dependency, and one clean case each.
+
+## 12. release-notes-verifier: report breaking-change markers without a note
+
+**Labels:** good first issue, release-notes-verifier, python
+
+**Context.** Conventional commits mark breaking changes with `!` after the type (`feat!:`) or a `BREAKING CHANGE:` footer. `release_notes_verify.py` treats them like any other commit, so a breaking change with no note is reported the same way as a small fix.
+
+**Acceptance criteria.**
+- Commits with `!:` in the subject or a `BREAKING CHANGE:` line in the body are reported as `REL-BREAKING-UNNOTED` when no note matches, and are never excluded by `--chore-pattern`.
+- When the changelog section has a heading containing "Breaking", a matched note under another heading is reported as a warning.
+- Tests built with `git_commit` from `tests/conftest.py`.
