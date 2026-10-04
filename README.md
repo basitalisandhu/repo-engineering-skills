@@ -17,6 +17,12 @@ python3 plugins/repo-engineering/skills/docs-truth-check/scripts/docs_truth_chec
 
 Questions, bugs and ideas: open an issue on this repository. Security reports: see [SECURITY.md](SECURITY.md).
 
+## Demo
+
+![Terminal output of repo-engineering docs-truth finding stale and missing claims in the committed sample repository](docs/demo.svg)
+
+Generated from the committed fixtures by [`scripts/render_demo.py`](scripts/render_demo.py); run `python3 scripts/render_demo.py` to regenerate it.
+
 ## Install
 
 The plugin installs as shown above. The skill scripts are also published as one container image on GitHub Packages (linux/amd64 and linux/arm64) for running them without a checkout, for example in CI. The image's entrypoint is `repo-engineering <subcommand> [args]`; mount the files to read at `/work`, which is the working directory:
