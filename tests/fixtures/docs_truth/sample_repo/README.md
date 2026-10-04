@@ -19,6 +19,7 @@ Options:
 - `--name` defaults to `world`.
 
 Set `GREETER_LANG` to change the language.
+`GREETER_LANG` defaults to `es`.
 
 Name helpers live in `src/greeter/helpers.py`; call `format_name()` to tidy a name.
 
