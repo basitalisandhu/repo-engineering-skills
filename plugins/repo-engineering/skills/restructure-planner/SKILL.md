@@ -108,5 +108,5 @@ How each goal proposes moves:
 ## Related
 
 - `cited-codebase-audit` for the `structure` findings that usually prompt a restructure.
-- `test-gap-finder` to pin behaviour of the files you are about to move.
+- `untested-entry-points` to pin behaviour of the files you are about to move.
 - Anthropic's `code-modernization` plugin covers legacy rewrites with equivalence checks; this skill only plans file moves from the import graph.

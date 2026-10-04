@@ -8,7 +8,7 @@ Ten skills for repository audits, documentation and release checks, each with a 
 | `cited-codebase-audit` | `skills/cited-codebase-audit/scripts/repo_facts.py`, `skills/cited-codebase-audit/scripts/audit_validate.py` | audit a repository from a deterministic inventory, and reject findings whose `path:line` citations do not resolve |
 | `agent-context-writer` | `skills/agent-context-writer/scripts/context_lint.py` | write AGENTS.md or CLAUDE.md with only what code cannot say, and lint out what a parser can see |
 | `readme-who-what-why` | `skills/readme-who-what-why/scripts/readme_check.py` | score whether a README's first screen says what, who, why, install, example and where to ask |
-| `test-gap-finder` | `skills/test-gap-finder/scripts/test_gaps.py` | rank untested public functions and entry points and write characterisation test stubs |
+| `untested-entry-points` | `skills/untested-entry-points/scripts/test_gaps.py` | rank untested public functions and entry points and write characterisation test stubs |
 | `repo-onboarding-guide` | `skills/repo-onboarding-guide/scripts/onboarding_facts.py`, `skills/repo-onboarding-guide/scripts/onboarding_lint.py` | extract cited facts, write an onboarding guide only from them, and flag sentences no fact supports |
 | `restructure-planner` | `skills/restructure-planner/scripts/restructure_plan.py` | build the import graph, find cycles, coupling and god modules, and print a move plan with `git mv` commands (never run) |
 | `adr-miner` | `skills/adr-miner/scripts/adr_mine.py`, `skills/adr-miner/scripts/adr_lint.py` | draft MADR stubs from decision commits, config changes and rationale comments, and lint an ADR folder |

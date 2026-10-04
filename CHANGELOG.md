@@ -8,6 +8,12 @@ All notable changes to this project are documented here. The format follows Keep
 
 - `docs-truth-check` also verifies environment defaults read through `from os import environ, getenv`, including aliased imports (#13, thanks @harshit3355).
 
+## [0.3.0] - 2026-10-04
+
+### Changed
+
+- Renamed the `test-gap-finder` skill to `untested-entry-points` so the name is unique across the author's skill packs (it collided with the code-quality skill of the same name in claude-dev-skills, which maps modules to test files; this skill finds public symbols and CLI entry points that no test mentions). Invoke it as `/repo-engineering:untested-entry-points`.
+
 ## [0.2.0] - 2026-10-04
 
 Five new skills, each with a standard-library script, a planted-defect fixture and tests, and seven new dispatcher subcommands. The container image now includes git for the two history-based skills.
@@ -50,10 +56,11 @@ The skill scripts are published as a container image on GitHub Packages, using o
 - `cited-codebase-audit`: `repo_facts.py` deterministic inventory, and `audit_validate.py`, which rejects findings whose `path:line` citations or quoted snippets do not resolve and prints acceptance stats.
 - `agent-context-writer`: `context_lint.py` flags AGENTS.md and CLAUDE.md lines that restate manifests, list dependencies, pin runtimes already pinned, dump directory trees, name missing paths or give generic advice, and reports length against a budget.
 - `readme-who-what-why`: `readme_check.py` scores what, who, why, install, example and where to ask in a README's first screen, flags hype words, and prints a to-do list.
-- `test-gap-finder`: `test_gaps.py` ranks untested public functions and entry points for Python, JavaScript and TypeScript, and writes skipped or todo characterisation test stubs for pytest, unittest, jest, vitest and node:test.
+- `untested-entry-points`: `test_gaps.py` ranks untested public functions and entry points for Python, JavaScript and TypeScript, and writes skipped or todo characterisation test stubs for pytest, unittest, jest, vitest and node:test.
 - Fixture repositories with planted defects for every script, an offline pytest suite, `scripts/validate_plugin.py`, and a CI workflow that runs the tests, ruff, the validator, `claude plugin validate --strict`, and the docs and README checkers on this repository.
 
-[Unreleased]: https://github.com/basitalisandhu/repo-engineering-skills/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/basitalisandhu/repo-engineering-skills/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/basitalisandhu/repo-engineering-skills/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/basitalisandhu/repo-engineering-skills/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/basitalisandhu/repo-engineering-skills/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/basitalisandhu/repo-engineering-skills/releases/tag/v0.1.0
