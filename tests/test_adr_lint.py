@@ -31,12 +31,14 @@ def test_statuses_in_every_supported_form():
 
 
 def test_clean_folder_passes_and_strict_counts_warnings(tmp_path):
-    (tmp_path / "0001-first.md").write_text("---\nstatus: accepted\n---\n# 1. First\n")
-    (tmp_path / "0002-second.md").write_text("# 2. Second\n\n* Status: superseded by [ADR-0003](0003-third.md)\n")
-    (tmp_path / "0003-third.md").write_text("# 3. Third\n\n- Status: accepted\n\nSupersedes ADR-0002.\n")
+    (tmp_path / "0001-first.md").write_text("---\nstatus: accepted\n---\n# 1. First\n", encoding="utf-8")
+    (tmp_path / "0002-second.md").write_text("# 2. Second\n\n* Status: superseded by [ADR-0003](0003-third.md)\n",
+                                             encoding="utf-8")
+    (tmp_path / "0003-third.md").write_text("# 3. Third\n\n- Status: accepted\n\nSupersedes ADR-0002.\n",
+                                            encoding="utf-8")
     rc, rep = run_json(mod, [str(tmp_path), "--json"])
     assert rc == 0 and rep["findings"] == []
-    (tmp_path / "scratch.md").write_text("# not an adr\n")
+    (tmp_path / "scratch.md").write_text("# not an adr\n", encoding="utf-8")
     assert run_main(mod, [str(tmp_path)])[0] == 0
     assert run_main(mod, [str(tmp_path), "--strict"])[0] == 1
 
@@ -48,8 +50,8 @@ def test_text_output_and_bad_input(tmp_path):
 
 
 def test_missing_title_and_numbering_starts_where_the_folder_does(tmp_path):
-    (tmp_path / "0010-first.md").write_text("Status: accepted\n\nNo heading here.\n")
-    (tmp_path / "0011-second.md").write_text("# 11. Second\n\n## Status\n\nDeprecated\n")
+    (tmp_path / "0010-first.md").write_text("Status: accepted\n\nNo heading here.\n", encoding="utf-8")
+    (tmp_path / "0011-second.md").write_text("# 11. Second\n\n## Status\n\nDeprecated\n", encoding="utf-8")
     rc, rep = run_json(mod, [str(tmp_path), "--json"])
     assert [(f["rule"], f["file"]) for f in rep["findings"]] == [("ADR-TITLE", "0010-first.md")]
     assert rep["statuses"]["0011-second.md"] == "Deprecated"

@@ -23,7 +23,7 @@ def test_whitespace_is_normalised_and_multiline_snippets_match(tmp_path):
                                            "snippet": "def legacy_export(orders):\n    # Not called anywhere."}]}],
               "considered_and_rejected": [], "not_examined": []}
     p = tmp_path / "r.json"
-    p.write_text(json.dumps(report))
+    p.write_text(json.dumps(report), encoding="utf-8")
     rc, res = run_json(mod, [str(p), str(REPO), "--json"])
     assert rc == 0 and res["stats"]["accepted"] == 1
 
@@ -32,7 +32,7 @@ def test_out_file_keeps_only_accepted_and_min_accept(tmp_path):
     out = tmp_path / "clean.json"
     rc, text, _ = run_main(mod, [str(REPORT), str(REPO), "--out", str(out), "--min-accept", "25"])
     assert rc == 0 and "2 of 7 findings accepted" in text
-    cleaned = json.loads(out.read_text())
+    cleaned = json.loads(out.read_text(encoding="utf-8"))
     assert [f["id"] for f in cleaned["findings"]] == ["F1", "F2"]
     assert len(cleaned["rejected_findings"]) == 5
     rc, _, _ = run_main(mod, [str(REPORT), str(REPO), "--min-accept", "50"])
@@ -42,7 +42,8 @@ def test_out_file_keeps_only_accepted_and_min_accept(tmp_path):
 def test_warnings_for_unknown_category_and_missing_sections(tmp_path):
     p = tmp_path / "r.json"
     p.write_text(json.dumps({"findings": [{"id": "X", "category": "vibes", "severity": "huge",
-                                           "location": "requirements.txt:2", "snippet": "flask==3.0.3"}]}))
+                                           "location": "requirements.txt:2", "snippet": "flask==3.0.3"}]}),
+                 encoding="utf-8")
     rc, res = run_json(mod, [str(p), str(REPO), "--json"])
     assert rc == 0
     assert len(res["warnings"]) == 4
@@ -50,9 +51,9 @@ def test_warnings_for_unknown_category_and_missing_sections(tmp_path):
 
 def test_bad_input(tmp_path):
     p = tmp_path / "r.json"
-    p.write_text("not json")
+    p.write_text("not json", encoding="utf-8")
     assert run_main(mod, [str(p), str(REPO)])[0] == 2
-    p.write_text("[]")
+    p.write_text("[]", encoding="utf-8")
     assert run_main(mod, [str(p), str(REPO)])[0] == 2
     assert run_main(mod, [str(REPORT), str(tmp_path / "nope")])[0] == 2
     rc, out, _ = run_main(mod, ["--help"])

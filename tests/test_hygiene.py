@@ -42,8 +42,8 @@ def test_planted_defects_in_the_fixture(fixture_copy):
 def test_secrets_are_found_and_redacted(fixture_copy):
     repo = fixture_copy("hygiene/repo")
     (repo / "app.py").write_text(f'AWS_ID = "{AWS_ID}"\ntoken = "{GH_TOKEN}"\ndb_password = "{GENERIC}"\n'
-                                 f'safe = "{AWS_ID}"  # hygiene: ignore\n')
-    (repo / "deploy_key").write_text(KEY_HEADER + "\nabc\n")
+                                 f'safe = "{AWS_ID}"  # hygiene: ignore\n', encoding="utf-8")
+    (repo / "deploy_key").write_text(KEY_HEADER + "\nabc\n", encoding="utf-8")
     rc, out, _ = run_main(mod, [str(repo), "--rule", "HYG-SECRET"])
     assert rc == 1
     rc, rep = run_json(mod, [str(repo), "--json", "--rule", "hyg-secret"])
@@ -70,7 +70,7 @@ def test_sarif_output(fixture_copy, tmp_path):
     repo = fixture_copy("hygiene/repo")
     sarif_path = tmp_path / "out.sarif"
     run_main(mod, [str(repo), "--sarif", str(sarif_path)])
-    data = json.loads(sarif_path.read_text())
+    data = json.loads(sarif_path.read_text(encoding="utf-8"))
     assert data["version"] == "2.1.0"
     run = data["runs"][0]
     assert run["tool"]["driver"]["name"] == "repo-hygiene-bundle"
@@ -81,23 +81,26 @@ def test_sarif_output(fixture_copy, tmp_path):
 
 
 def test_clean_repository_passes(tmp_path):
-    (tmp_path / "LICENSE").write_text("MIT License\n\nPermission is hereby granted, free of charge, to any person\n")
-    (tmp_path / "SECURITY.md").write_text("# Security\n")
+    (tmp_path / "LICENSE").write_text("MIT License\n\nPermission is hereby granted, free of charge, to any person\n",
+                                      encoding="utf-8")
+    (tmp_path / "SECURITY.md").write_text("# Security\n", encoding="utf-8")
     (tmp_path / ".github").mkdir()
-    (tmp_path / ".github" / "CODE_OF_CONDUCT.md").write_text("# Code of conduct\n")
+    (tmp_path / ".github" / "CODE_OF_CONDUCT.md").write_text("# Code of conduct\n", encoding="utf-8")
     (tmp_path / "package.json").write_text(json.dumps({"name": "x", "license": "MIT",
-                                                        "dependencies": {"lodash": "^4.17.21"}}))
+                                                        "dependencies": {"lodash": "^4.17.21"}}), encoding="utf-8")
     (tmp_path / "package-lock.json").write_text(json.dumps({"lockfileVersion": 3, "packages": {
-        "": {"dependencies": {"lodash": "^4.17.21"}}, "node_modules/lodash": {"version": "4.17.21"}}}))
+        "": {"dependencies": {"lodash": "^4.17.21"}}, "node_modules/lodash": {"version": "4.17.21"}}}),
+        encoding="utf-8")
     rc, rep = run_json(mod, [str(tmp_path), "--json"])
     assert rc == 0 and rep["findings"] == [] and rep["licence_family"] == "MIT"
 
 
 def test_licence_mismatch_and_uv_lock_drift(tmp_path):
-    (tmp_path / "LICENSE").write_text("Apache License, Version 2.0\n")
+    (tmp_path / "LICENSE").write_text("Apache License, Version 2.0\n", encoding="utf-8")
     (tmp_path / "pyproject.toml").write_text('[project]\nname = "x"\nlicense = "MIT"\n'
-                                             'dependencies = ["httpx>=0.27", "rich"]\n')
-    (tmp_path / "uv.lock").write_text('version = 1\n[[package]]\nname = "httpx"\nversion = "0.27.0"\n')
+                                             'dependencies = ["httpx>=0.27", "rich"]\n', encoding="utf-8")
+    (tmp_path / "uv.lock").write_text('version = 1\n[[package]]\nname = "httpx"\nversion = "0.27.0"\n',
+                                      encoding="utf-8")
     rc, rep = run_json(mod, [str(tmp_path), "--json", "--rule", "HYG-SPDX", "--rule", "HYG-LOCKDRIFT"])
     msgs = sorted((f["rule"], f["severity"], f["message"]) for f in rep["findings"])
     assert msgs[0][:2] == ("HYG-LOCKDRIFT", "medium") and "rich" in msgs[0][2]
@@ -108,7 +111,7 @@ def test_git_mode_counts_only_committed_files(tmp_path):
     repo = tmp_path / "r"
     git_commit(repo, "init", {"LICENSE": "MIT License\n", "SECURITY.md": "x\n", "CODE_OF_CONDUCT.md": "x\n"})
     (repo / "dist").mkdir()
-    (repo / "dist" / "out.js").write_text("x\n")
+    (repo / "dist" / "out.js").write_text("x\n", encoding="utf-8")
     rc, rep = run_json(mod, [str(repo), "--json"])
     assert rep["file_source"] == "git ls-files"
     assert rc == 0 and rep["findings"] == []
@@ -125,7 +128,7 @@ def test_workflow_refs_that_need_no_pin_and_refs_with_none(tmp_path):
     wf.mkdir(parents=True)
     (wf / "a.yml").write_text("permissions:\n  contents: read\njobs:\n  x:\n    steps:\n"
                               "      - uses: ./local-action\n      - uses: docker://alpine:3.20\n"
-                              "      - uses: some/action\n      - uses: 'other/action@main'\n")
+                              "      - uses: some/action\n      - uses: 'other/action@main'\n", encoding="utf-8")
     rc, rep = run_json(mod, [str(tmp_path), "--json", "--rule", "HYG-PIN", "--rule", "HYG-PERMS"])
     assert [(f["line"], f["message"].split(" ")[0]) for f in rep["findings"]] == [(8, "some/action"),
                                                                                  (9, "other/action@main")]
@@ -133,12 +136,13 @@ def test_workflow_refs_that_need_no_pin_and_refs_with_none(tmp_path):
 
 def test_other_manifests_and_two_js_lockfiles(tmp_path):
     (tmp_path / "Cargo.toml").write_text('[package]\nname = "x"\nlicense = "MIT OR Apache-2.0"\n'
-                                         '[dependencies]\nserde = "1"\n')
-    (tmp_path / "Gemfile").write_text("gem 'rails'\n")
-    (tmp_path / "package.json").write_text('{"name": "y", "license": "MIT", "dependencies": {"a": "1"}}')
-    (tmp_path / "yarn.lock").write_text("a@1:\n  version 1\n")
+                                         '[dependencies]\nserde = "1"\n', encoding="utf-8")
+    (tmp_path / "Gemfile").write_text("gem 'rails'\n", encoding="utf-8")
+    (tmp_path / "package.json").write_text('{"name": "y", "license": "MIT", "dependencies": {"a": "1"}}',
+                                           encoding="utf-8")
+    (tmp_path / "yarn.lock").write_text("a@1:\n  version 1\n", encoding="utf-8")
     (tmp_path / "package-lock.json").write_text('{"lockfileVersion": 3, "packages": {"": {"dependencies": '
-                                                '{"a": "1"}}, "node_modules/a": {}}}')
+                                                '{"a": "1"}}, "node_modules/a": {}}}', encoding="utf-8")
     rc, rep = run_json(mod, [str(tmp_path), "--json", "--rule", "HYG-LOCK", "--rule", "HYG-LOCKDRIFT",
                              "--rule", "HYG-SPDX"])
     got = sorted((f["rule"], f["severity"], f["path"]) for f in rep["findings"])
