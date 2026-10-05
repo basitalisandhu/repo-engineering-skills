@@ -15,7 +15,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-__version__ = "0.3.1"
+__version__ = "0.4.0"
 
 PROG = "repo-engineering"
 ROOT = Path(__file__).resolve().parents[1]
@@ -87,6 +87,16 @@ COMMANDS: dict[str, tuple[str, str, str]] = {
         "release-notes-verifier",
         "release_notes_verify.py",
         "Compare release notes with the commits between two tags",
+    ),
+    "branch-sweep": (
+        "stale-branch-sweep",
+        "stale_branch_sweep.py",
+        "Merged, stale and open-PR branches with delete commands (printed, never run)",
+    ),
+    "plan-grill": (
+        "plan-grill",
+        "plan_grill.py",
+        "Check an implementation plan for required sections and unanswered questions",
     ),
 }
 

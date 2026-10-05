@@ -25,7 +25,7 @@ RUN set -e; for d in /tmp/skills/*/scripts; do \
 FROM ${PYTHON_IMAGE}
 ARG VERSION=0.0.0-dev
 LABEL org.opencontainers.image.title="repo-engineering-skills" \
-      org.opencontainers.image.description="Repository engineering skill scripts (docs truth check, cited audits, agent context lint, README check, test gaps, onboarding facts, restructure plans, ADR mining, hygiene, release notes) behind one command" \
+      org.opencontainers.image.description="Repository engineering skill scripts (docs truth check, cited audits, agent context lint, README check, test gaps, onboarding facts, restructure plans, ADR mining, hygiene, release notes, stale branches, plan checks) behind one command" \
       org.opencontainers.image.source="https://github.com/basitalisandhu/repo-engineering-skills" \
       org.opencontainers.image.url="https://github.com/basitalisandhu/repo-engineering-skills" \
       org.opencontainers.image.licenses="MIT" \
