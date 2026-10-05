@@ -4,8 +4,16 @@ All notable changes to this project are documented here. The format follows Keep
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-10-05
+
 ### Changed
 
+- Rewrote all ten skill descriptions to 450 to 556 characters (from 681 to 948): each starts with a verb, states the goal before the mechanism, carries one quoted phrase a user would type, a "Use when ..." sentence and a "Not for ..." boundary (`repo-hygiene-bundle` had none), and stays double-quoted.
+- Related sections state the boundary with the overlapping skills in other packs: `readme-author`, `release-notes`, `onboarding-doc`, `github-actions-author`, `adr-writer` and `test-gap-finder` (claude-dev-skills), `decision-log` (ways-of-working-skills) and `agent-config-audit` (agent-security-skills).
+- `docs_truth_check.py` and `release_notes_verify.py` decode subprocess output as UTF-8 (other calls already did), tests open text files with `encoding="utf-8"`, and CI runs tests and ruff on `windows-latest` as well as Ubuntu and macOS.
+- The plugin and root READMEs mention technical due diligence, the import dependency graph and bus factor (not measured).
+- `scripts/validate_plugin.py` now fails when a description is over 600 characters, is not double-quoted, or lacks "Use " or "Not for"; `tests/test_validate_plugin.py` covers each rule and the existing `## Limits` requirement.
+- Version 0.3.1 in `plugin.json`, `marketplace.json`, the dispatcher and the README container examples.
 - `docs-truth-check` also verifies environment defaults read through `from os import environ, getenv`, including aliased imports (#13, thanks @harshit3355).
 
 ## [0.3.0] - 2026-10-04

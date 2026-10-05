@@ -49,8 +49,8 @@ def test_directories_env_services_and_owners():
 
 def test_no_invented_services_or_purposes(tmp_path):
     (tmp_path / "misc").mkdir()
-    (tmp_path / "misc" / "notes.txt").write_text("x\n")
-    (tmp_path / "app.py").write_text("import os\nTOKEN = os.environ['MY_TOKEN']\n")
+    (tmp_path / "misc" / "notes.txt").write_text("x\n", encoding="utf-8")
+    (tmp_path / "app.py").write_text("import os\nTOKEN = os.environ['MY_TOKEN']\n", encoding="utf-8")
     rc, rep = run_json(mod, [str(tmp_path), "--json"])
     assert rc == 0
     misc = facts_by_kind(rep, "directory")[0]
@@ -70,13 +70,15 @@ def test_text_output_out_file_and_errors(tmp_path):
 
 
 def test_other_entry_point_and_command_sources(tmp_path):
-    (tmp_path / "justfile").write_text("serve port='8000':\n    uvicorn app:app\n\ncheck:\n    ruff check .\n")
-    (tmp_path / "Procfile").write_text("web: gunicorn app:app\n")
-    (tmp_path / "Dockerfile").write_text("FROM python:3.12-slim\nENTRYPOINT [\"svc\"]\n")
+    (tmp_path / "justfile").write_text("serve port='8000':\n    uvicorn app:app\n\ncheck:\n    ruff check .\n",
+                                       encoding="utf-8")
+    (tmp_path / "Procfile").write_text("web: gunicorn app:app\n", encoding="utf-8")
+    (tmp_path / "Dockerfile").write_text("FROM python:3.12-slim\nENTRYPOINT [\"svc\"]\n", encoding="utf-8")
     (tmp_path / "svc").mkdir()
-    (tmp_path / "svc" / "__main__.py").write_text("print('hi')\n")
-    (tmp_path / "package.json").write_text('{"name": "x", "bin": {"x": "./bin/x.js"}, "main": "index.js"}')
-    (tmp_path / ".env.example").write_text("# comment\nSTRIPE_SECRET_KEY=\nexport SENTRY_DSN=\n")
+    (tmp_path / "svc" / "__main__.py").write_text("print('hi')\n", encoding="utf-8")
+    (tmp_path / "package.json").write_text('{"name": "x", "bin": {"x": "./bin/x.js"}, "main": "index.js"}',
+                                           encoding="utf-8")
+    (tmp_path / ".env.example").write_text("# comment\nSTRIPE_SECRET_KEY=\nexport SENTRY_DSN=\n", encoding="utf-8")
     rc, rep = run_json(mod, [str(tmp_path), "--json"])
     texts = {f["text"] for f in rep["facts"]}
     assert "`just serve` is a just target" in texts

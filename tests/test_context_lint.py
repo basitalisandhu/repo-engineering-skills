@@ -26,7 +26,7 @@ def test_lines_with_non_inferable_knowledge_pass():
 
 def test_budget(tmp_path):
     ctx = tmp_path / "CLAUDE.md"
-    ctx.write_text("\n".join(f"- rule {i}: ask before touching module {i}" for i in range(30)))
+    ctx.write_text("\n".join(f"- rule {i}: ask before touching module {i}" for i in range(30)), encoding="utf-8")
     rc, rep = run_json(mod, [str(ctx), str(REPO), "--json", "--max-lines", "20"])
     assert rc == 1 and [f["code"] for f in rep["findings"]] == ["CTX-BUDGET"]
     rc, rep = run_json(mod, [str(ctx), str(REPO), "--json"])
@@ -36,9 +36,9 @@ def test_budget(tmp_path):
 def test_pyproject_console_script_and_requirements(tmp_path):
     (tmp_path / "pyproject.toml").write_text(
         '[project]\nname="t"\nrequires-python=">=3.11"\ndependencies=["httpx>=0.27", "pydantic", "rich"]\n'
-        '[project.scripts]\nmytool = "t.cli:main"\n')
+        '[project.scripts]\nmytool = "t.cli:main"\n', encoding="utf-8")
     ctx = tmp_path / "AGENTS.md"
-    ctx.write_text("Run `mytool --check`.\nWe use httpx, pydantic and rich on Python 3.11.\n")
+    ctx.write_text("Run `mytool --check`.\nWe use httpx, pydantic and rich on Python 3.11.\n", encoding="utf-8")
     rc, rep = run_json(mod, [str(ctx), str(tmp_path), "--json"])
     assert {f["code"] for f in rep["findings"]} == {"CTX-MANIFEST", "CTX-DEPS", "CTX-RUNTIME"}
 

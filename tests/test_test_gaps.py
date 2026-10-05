@@ -25,21 +25,21 @@ def test_stubs_are_valid_and_skipped(tmp_path):
     files = sorted(p.name for p in tmp_path.iterdir())
     assert files == ["slugify.characterisation.test.ts", "test_main_characterisation.py",
                      "test_parse_config_characterisation.py"]
-    py = (tmp_path / "test_parse_config_characterisation.py").read_text()
+    py = (tmp_path / "test_parse_config_characterisation.py").read_text(encoding="utf-8")
     ast.parse(py)
     assert "from calc.core import parse_config" in py and "pytest.mark.skip" in py and "text=..." in py
-    assert "test.todo(" in (tmp_path / "slugify.characterisation.test.ts").read_text()
-    (tmp_path / "test_main_characterisation.py").write_text("keep me")
+    assert "test.todo(" in (tmp_path / "slugify.characterisation.test.ts").read_text(encoding="utf-8")
+    (tmp_path / "test_main_characterisation.py").write_text("keep me", encoding="utf-8")
     run_main(mod, [str(REPO), "--stubs-dir", str(tmp_path)])
-    assert (tmp_path / "test_main_characterisation.py").read_text() == "keep me"
+    assert (tmp_path / "test_main_characterisation.py").read_text(encoding="utf-8") == "keep me"
 
 
 def test_unittest_and_node_frameworks(tmp_path):
     (tmp_path / "pkg").mkdir()
-    (tmp_path / "pkg" / "m.py").write_text("def f(x):\n    return x\n")
+    (tmp_path / "pkg" / "m.py").write_text("def f(x):\n    return x\n", encoding="utf-8")
     (tmp_path / "tests").mkdir()
-    (tmp_path / "tests" / "test_x.py").write_text("import unittest\n")
-    (tmp_path / "lib.js").write_text("export function g(a) {\n  return a;\n}\n")
+    (tmp_path / "tests" / "test_x.py").write_text("import unittest\n", encoding="utf-8")
+    (tmp_path / "lib.js").write_text("export function g(a) {\n  return a;\n}\n", encoding="utf-8")
     rc, rep = run_json(mod, [str(tmp_path), "--json", "--stubs"])
     assert rep["frameworks"] == {"js": "node:test", "python": "unittest"}
     contents = "\n".join(s["content"] for s in rep["stubs"])
