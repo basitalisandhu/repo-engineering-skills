@@ -69,7 +69,7 @@ jobs:
           docker build --build-arg VERSION=ci -t repo-engineering-skills:ci .
           docker run --rm repo-engineering-skills:ci --help > help.txt && grep "^usage: repo-engineering <subcommand>" help.txt
           docker run --rm repo-engineering-skills:ci > /dev/null && grep -c "^  [a-z]" help.txt
-          for s in docs-truth repo-facts audit-validate context-lint readme-check test-gaps onboarding onboarding-lint restructure adr adr-lint hygiene release-notes; do docker run --rm repo-engineering-skills:ci "$s" --help > /dev/null; done
+          for s in docs-truth repo-facts audit-validate context-lint readme-check test-gaps onboarding onboarding-lint restructure adr adr-lint hygiene release-notes branch-sweep plan-grill; do docker run --rm repo-engineering-skills:ci "$s" --help > /dev/null; done
           docker run --rm --entrypoint git repo-engineering-skills:ci --version
           docker run --rm repo-engineering-skills:ci --version
           test "$(docker run --rm --entrypoint id repo-engineering-skills:ci -u)" = "1000"

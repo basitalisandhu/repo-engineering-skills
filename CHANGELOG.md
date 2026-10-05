@@ -4,6 +4,17 @@ All notable changes to this project are documented here. The format follows Keep
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-10-05
+
+### Added
+
+- `stale-branch-sweep`: `stale_branch_sweep.py` joins saved `gh api .../branches`, `git for-each-ref` (all and `--merged`) and `gh pr list --state all` exports, gives each remote branch one status (base, protected, open-pr, merged, stale, no-ref, active) with the last committer as owner, and prints `git push --delete` commands for merged branches and commented ones for stale branches; it never runs them. Squash-merged branches are found by matching the merged PR's head commit. Subcommand `branch-sweep`.
+- `plan-grill`: a fixed question set for an implementation plan (scope, interfaces, data, failure modes, rollout, tests, open questions) and `plan_grill.py`, which checks the Markdown for the seven sections, thin sections, placeholders, a missing rollback, failure modes without a list, tests without a kind, and questions with no owner or answer, each with its line. No model calls. Subcommand `plan-grill`.
+
+### Changed
+
+- Version 0.4.0 in `plugin.json`, `marketplace.json`, the dispatcher and the README container examples.
+
 ## [0.3.1] - 2026-10-05
 
 ### Changed
