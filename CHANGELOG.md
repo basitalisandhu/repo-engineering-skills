@@ -4,6 +4,9 @@ All notable changes to this project are documented here. The format follows Keep
 
 ## [Unreleased]
 
+- Resolve literal setuptools and hatch dynamic versions without executing code,
+  and mark unresolved version claims as unverified instead of skipping them.
+
 ### Changed
 
 - `docs-truth-check` also verifies environment defaults read through `from os import environ, getenv`, including aliased imports (#13, thanks @harshit3355).
