@@ -47,6 +47,20 @@ def test_method_stub_is_valid_python(tmp_path):
     assert "from calc.calculator import Calculator" in source
     assert "Calculator().untested_method(...)" in source
 
+def test_method_stub_is_valid_unittest_python(tmp_path):
+    unit = {
+        "name": "Calculator.untested_method",
+        "path": "src/calc/calculator.py",
+        "line": 10,
+        "lang": "python",
+        "kind": "method",
+        "module": "calc.calculator",
+        "params": [],
+    }
+
+    source = mod.stub(unit, "unittest")[1]
+    ast.parse(source)
+
 
 def test_stubs_are_valid_and_skipped(tmp_path):
     rc, rep = run_json(mod, [str(REPO), "--json", "--stubs-dir", str(tmp_path)])

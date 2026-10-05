@@ -12,6 +12,10 @@ coverage: a mention proves nothing ran. Size is the unit's line span; fan-in is 
 files, other than its own, that mention the name. Untested units are ranked by entry point first, then by
 size x (1 + fan-in).
 
+--methods also reports public methods of public Python classes as separate units. A method counts as tested when
+a test file mentions its method name as a whole word; common names such as "get" or "run" can therefore appear
+tested even when the specific method is not covered.
+
 --stubs prints characterisation test stubs in the detected framework (pytest, unittest, jest, vitest, node:test);
 --stubs-dir writes them as new files and never overwrites an existing one. Stubs are skipped or todo tests: they
 pass nothing until someone records the current behaviour in them.
@@ -234,12 +238,17 @@ def stub(unit: dict, framework: str) -> tuple[str, str]:
                 "Record what the code does today before changing it: call it with real inputs, paste the observed\n"
                 'output as the expected value, then remove the skip."""\n')
         if framework == "unittest":
-            body = (f"{head}import unittest\n\nfrom {mod} import {import_name}\n\n\n"
-                    f"class Test{name[:1].upper()}{name[1:]}Characterisation(unittest.TestCase):\n"
-                    f'    @unittest.skip("characterisation stub: fill in real inputs and the observed output")\n'
-                    f"    def test_current_behaviour(self):\n"
-                    f"        result = {call}  # replace the arguments with real values\n"
-                    f"        self.assertEqual(result, None)  # replace None with the observed output\n")
+            class_name = "".join(
+                p[:1].upper() + p[1:] for p in name.split(".")
+            )
+            body = (
+                f"{head}import unittest\n\nfrom {mod} import {import_name}\n\n\n"
+                f"class Test{class_name}Characterisation(unittest.TestCase):\n"
+                f'    @unittest.skip("characterisation stub: fill in real inputs and the observed output")\n'
+                f"    def test_current_behaviour(self):\n"
+                f"        result = {call}  # replace the arguments with real values\n"
+                f"        self.assertEqual(result, None)  # replace None with the observed output\n"
+            )
         else:
             body = (f"{head}import pytest\n\nfrom {mod} import {import_name}\n\n\n"
                     f'@pytest.mark.skip(reason="characterisation stub: fill in real inputs and the observed output")\n'
@@ -338,7 +347,8 @@ def main(argv: list[str] | None = None) -> int:
     if not root.is_dir():
         print(f"error: not a directory: {args.repo}", file=sys.stderr)
         return 2
-    rep = analyse(root, max(1, args.top ), args.methods)
+    rep = analyse(root, max(1, args.top), args.methods)
+
     stubs = []
     if args.stubs or args.stubs_dir:
         for u in rep["ranked_untested"]:
