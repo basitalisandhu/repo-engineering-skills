@@ -15,9 +15,51 @@ def test_planted_untested_units_are_ranked():
     pc = rep["ranked_untested"][1]
     assert pc["fan_in"] == 1 and pc["size"] == 10
     tested = {u["name"] for u in rep["tested_units"]}
-    assert tested == {"add", "formatDate"}
+    assert tested == {"add", "Calculator", "formatDate"}
     assert "_private_helper" not in str(rep)
     assert rep["frameworks"] == {"js": "vitest", "python": "pytest"}
+
+
+def test_methods_lists_only_untested_public_method():
+    rc, rep = run_json(mod, [str(REPO), "--json", "--methods"])
+    assert rc == 0
+
+    method_gaps = [
+        u["name"] for u in rep["ranked_untested"]
+        if u["kind"] == "method"
+    ]
+    assert method_gaps == ["Calculator.untested_method"]
+
+
+def test_method_stub_is_valid_python(tmp_path):
+    rc, rep = run_json(
+        mod,
+        [str(REPO), "--json", "--methods", "--stubs-dir", str(tmp_path)],
+    )
+    assert rc == 0
+
+    stub = tmp_path / "test_calculator_untested_method_characterisation.py"
+    assert stub.exists()
+
+    source = stub.read_text()
+    ast.parse(source)
+
+    assert "from calc.calculator import Calculator" in source
+    assert "Calculator().untested_method(...)" in source
+
+def test_method_stub_is_valid_unittest_python(tmp_path):
+    unit = {
+        "name": "Calculator.untested_method",
+        "path": "src/calc/calculator.py",
+        "line": 10,
+        "lang": "python",
+        "kind": "method",
+        "module": "calc.calculator",
+        "params": [],
+    }
+
+    source = mod.stub(unit, "unittest")[1]
+    ast.parse(source)
 
 
 def test_stubs_are_valid_and_skipped(tmp_path):
