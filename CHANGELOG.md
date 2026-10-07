@@ -4,11 +4,32 @@ All notable changes to this project are documented here. The format follows Keep
 
 ## [Unreleased]
 
+### Changed
+
 - Resolve literal setuptools and hatch dynamic versions without executing code,
   and mark unresolved version claims as unverified instead of skipping them.
 
+## [0.4.0] - 2026-10-05
+
+### Added
+
+- `stale-branch-sweep`: `stale_branch_sweep.py` joins saved `gh api .../branches`, `git for-each-ref` (all and `--merged`) and `gh pr list --state all` exports, gives each remote branch one status (base, protected, open-pr, merged, stale, no-ref, active) with the last committer as owner, and prints `git push --delete` commands for merged branches and commented ones for stale branches; it never runs them. Squash-merged branches are found by matching the merged PR's head commit. Subcommand `branch-sweep`.
+- `plan-grill`: a fixed question set for an implementation plan (scope, interfaces, data, failure modes, rollout, tests, open questions) and `plan_grill.py`, which checks the Markdown for the seven sections, thin sections, placeholders, a missing rollback, failure modes without a list, tests without a kind, and questions with no owner or answer, each with its line. No model calls. Subcommand `plan-grill`.
+
 ### Changed
 
+- Version 0.4.0 in `plugin.json`, `marketplace.json`, the dispatcher and the README container examples.
+
+## [0.3.1] - 2026-10-05
+
+### Changed
+
+- Rewrote all ten skill descriptions to 450 to 556 characters (from 681 to 948): each starts with a verb, states the goal before the mechanism, carries one quoted phrase a user would type, a "Use when ..." sentence and a "Not for ..." boundary (`repo-hygiene-bundle` had none), and stays double-quoted.
+- Related sections state the boundary with the overlapping skills in other packs: `readme-author`, `release-notes`, `onboarding-doc`, `github-actions-author`, `adr-writer` and `test-gap-finder` (claude-dev-skills), `decision-log` (ways-of-working-skills) and `agent-config-audit` (agent-security-skills).
+- `docs_truth_check.py` and `release_notes_verify.py` decode subprocess output as UTF-8 (other calls already did), tests open text files with `encoding="utf-8"`, and CI runs tests and ruff on `windows-latest` as well as Ubuntu and macOS.
+- The plugin and root READMEs mention technical due diligence, the import dependency graph and bus factor (not measured).
+- `scripts/validate_plugin.py` now fails when a description is over 600 characters, is not double-quoted, or lacks "Use " or "Not for"; `tests/test_validate_plugin.py` covers each rule and the existing `## Limits` requirement.
+- Version 0.3.1 in `plugin.json`, `marketplace.json`, the dispatcher and the README container examples.
 - `docs-truth-check` also verifies environment defaults read through `from os import environ, getenv`, including aliased imports (#13, thanks @harshit3355).
 
 ## [0.3.0] - 2026-10-04

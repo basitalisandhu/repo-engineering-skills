@@ -1,20 +1,20 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "repo-engineering-skills",
-  "description": "Claude Code skills for repository audits and documentation: docs checked against the code, audits whose findings must cite a resolvable line, agent context files that hold only what code cannot say, README first-screen checks, test gap ranking, onboarding guides built from cited facts, import-graph restructure plans, ADRs mined from git history, offline hygiene checks and release notes checked against commits.",
+  "description": "Claude Code skills for repository audits and documentation: docs checked against the code, audits whose findings must cite a resolvable line, agent context files that hold only what code cannot say, README first-screen checks, test gap ranking, onboarding guides built from cited facts, import-graph restructure plans, ADRs mined from git history, offline hygiene checks, release notes checked against commits, a stale-branch sweep and an implementation plan check.",
   "owner": {
     "name": "Muhammad Basit Ali",
     "url": "https://github.com/basitalisandhu"
   },
   "metadata": {
-    "version": "0.3.0"
+    "version": "0.4.0"
   },
   "plugins": [
     {
       "name": "repo-engineering",
       "source": "./plugins/repo-engineering",
-      "description": "Ten skills, each with a tested standard-library script: docs-truth-check, cited-codebase-audit, agent-context-writer, readme-who-what-why, untested-entry-points, repo-onboarding-guide, restructure-planner, adr-miner, repo-hygiene-bundle and release-notes-verifier.",
-      "version": "0.3.0",
+      "description": "Twelve skills, each with a tested standard-library script: docs-truth-check, cited-codebase-audit, agent-context-writer, readme-who-what-why, untested-entry-points, repo-onboarding-guide, restructure-planner, adr-miner, repo-hygiene-bundle, release-notes-verifier, stale-branch-sweep and plan-grill.",
+      "version": "0.4.0",
       "author": {
         "name": "Muhammad Basit Ali",
         "url": "https://github.com/basitalisandhu"

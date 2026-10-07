@@ -41,7 +41,8 @@ def test_bad_guide_flags_exactly_the_planted_claims(facts_file):
 
 def test_allow_list_and_fact_ids(facts_file, tmp_path):
     guide = tmp_path / "g.md"
-    guide.write_text("Run `ruff check .` before pushing.\n\nThe CLI lives in `inventory/cli.py` [F99].\n")
+    guide.write_text("Run `ruff check .` before pushing.\n\nThe CLI lives in `inventory/cli.py` [F99].\n",
+                     encoding="utf-8")
     rc, rep = run_json(mod, [str(guide), str(facts_file), "--json", "--allow", "ruff check ."])
     assert rc == 1
     assert [(f["rule"], f["unmatched"]) for f in rep["findings"]] == [("ONB-CITE", ["F99"])]
@@ -49,7 +50,8 @@ def test_allow_list_and_fact_ids(facts_file, tmp_path):
 
 def test_code_block_lines_are_claims(facts_file, tmp_path):
     guide = tmp_path / "g.md"
-    guide.write_text("```bash\n# comment lines are skipped\npython -m pytest -q\nnpm run deploy\n```\n")
+    guide.write_text("```bash\n# comment lines are skipped\npython -m pytest -q\nnpm run deploy\n```\n",
+                     encoding="utf-8")
     rc, rep = run_json(mod, [str(guide), str(facts_file), "--json"])
     assert rc == 1
     assert [(f["line"], f["unmatched"]) for f in rep["findings"]] == [(4, ["npm run deploy"])]
@@ -57,7 +59,7 @@ def test_code_block_lines_are_claims(facts_file, tmp_path):
 
 def test_bad_input(tmp_path, facts_file):
     bad = tmp_path / "bad.json"
-    bad.write_text(json.dumps({"nope": []}))
+    bad.write_text(json.dumps({"nope": []}), encoding="utf-8")
     guide = HERE / "good_guide.md"
     assert run_main(mod, [str(guide), str(bad)])[0] == 2
     assert run_main(mod, [str(tmp_path / "missing.md"), str(facts_file)])[0] == 2
@@ -69,7 +71,7 @@ def test_tables_urls_and_service_aliases(facts_file, tmp_path):
     guide = tmp_path / "g.md"
     guide.write_text("| Variable | Read in |\n|---|---|\n| `DATABASE_URL` | `inventory/cli.py` |\n"
                      "| `SMTP_HOST` | `inventory/mail.py` |\n\n"
-                     "Docs are at https://example.com/docs/setup.md and the database is Postgres.\n")
+                     "Docs are at https://example.com/docs/setup.md and the database is Postgres.\n", encoding="utf-8")
     rc, rep = run_json(mod, [str(guide), str(facts_file), "--json"])
     assert [(f["line"], f["unmatched"]) for f in rep["findings"]] == [(4, ["SMTP_HOST", "inventory/mail.py"])]
     assert rep["stats"]["supported"] == 2
@@ -77,6 +79,7 @@ def test_tables_urls_and_service_aliases(facts_file, tmp_path):
 
 def test_directory_ancestors_and_command_fragments(facts_file, tmp_path):
     guide = tmp_path / "g.md"
-    guide.write_text("The front end code is in `web/src/`. CI calls `pytest -q` through `python -m pytest -q`.\n")
+    guide.write_text("The front end code is in `web/src/`. CI calls `pytest -q` through `python -m pytest -q`.\n",
+                     encoding="utf-8")
     rc, rep = run_json(mod, [str(guide), str(facts_file), "--json"])
     assert rc == 0, rep["findings"]

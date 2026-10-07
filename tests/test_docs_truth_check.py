@@ -95,10 +95,11 @@ def test_environment_defaults_compare_literal_get_and_getenv_values(tmp_path):
     (tmp_path / "settings.py").write_text(
         'import os\nAPP_LANGUAGE = os.environ.get("APP_LANGUAGE", "en")\n'
         'APP_REGION = os.getenv("APP_REGION", "global")\n'
-        'APP_MODE = os.getenv("APP_MODE", configured_mode)\n'
+        'APP_MODE = os.getenv("APP_MODE", configured_mode)\n', encoding="utf-8"
     )
     (tmp_path / "README.md").write_text(
-        "APP_LANGUAGE defaults to `en`.\nAPP_REGION defaults to `global`.\nAPP_MODE defaults to `safe`.\n"
+        "APP_LANGUAGE defaults to `en`.\nAPP_REGION defaults to `global`.\nAPP_MODE defaults to `safe`.\n",
+        encoding="utf-8"
     )
     _, rep = run_json(mod, [str(tmp_path), "--json"])
     statuses = {(c["claim"], c["status"]) for c in rep["claims"] if c["kind"] == "default"}
@@ -114,11 +115,11 @@ def test_environment_defaults_detect_from_os_imports(tmp_path):
         'APP_REGION = getenv("APP_REGION", "global")\n'
         "from os import environ as settings, getenv as read_env\n"
         'APP_MODE = settings.get("APP_MODE", "safe")\n'
-        'APP_STAGE = read_env("APP_STAGE", "prod")\n'
+        'APP_STAGE = read_env("APP_STAGE", "prod")\n', encoding="utf-8"
     )
     (tmp_path / "README.md").write_text(
         "APP_LANGUAGE defaults to `en`.\nAPP_REGION defaults to `global`.\n"
-        "APP_MODE defaults to `safe`.\nAPP_STAGE defaults to `prod`.\n"
+        "APP_MODE defaults to `safe`.\nAPP_STAGE defaults to `prod`.\n", encoding="utf-8"
     )
     _, rep = run_json(mod, [str(tmp_path), "--json"])
     statuses = {(claim["claim"], claim["status"]) for claim in rep["claims"] if claim["kind"] == "default"}
@@ -131,14 +132,14 @@ def test_environment_defaults_detect_from_os_imports(tmp_path):
 def test_fixing_the_docs_makes_the_gate_pass(fixture_copy):
     repo = fixture_copy("docs_truth/sample_repo")
     readme = repo / "README.md"
-    text = readme.read_text()
+    text = readme.read_text(encoding="utf-8")
     text = (text.replace("greeter==1.1.0", "greeter==1.2.0")
             .replace("defaults to `3`", "defaults to `5`")
             .replace("`GREETER_LANG` defaults to `es`", "`GREETER_LANG` defaults to `en`"))
     text = text.replace(" --color red", "").replace("src/greeter/helpers.py", "src/greeter/utils.py")
     text = text.replace("call `format_name()`", "call `normalise_name()`")
     text = text.replace(" and the [old guide](docs/guide.md)", "")
-    readme.write_text(text)
+    readme.write_text(text, encoding="utf-8")
     rc, rep = run_json(mod, [str(repo), "--json"])
     assert rc == 0, failing(rep)
     assert rep["summary"]["missing"] == 0 and rep["summary"]["stale"] == 0
@@ -164,8 +165,8 @@ def test_docs_selection_and_bad_input(tmp_path):
 
 def test_unparseable_script_flags_are_unverified_not_missing(tmp_path):
     (tmp_path / "tool").mkdir()
-    (tmp_path / "tool" / "run.py").write_text("import sys\nprint(sys.argv)\n")
-    (tmp_path / "README.md").write_text("```bash\npython3 tool/run.py --fast\n```\n")
+    (tmp_path / "tool" / "run.py").write_text("import sys\nprint(sys.argv)\n", encoding="utf-8")
+    (tmp_path / "README.md").write_text("```bash\npython3 tool/run.py --fast\n```\n", encoding="utf-8")
     rc, rep = run_json(mod, [str(tmp_path), "--json"])
     flag = next(c for c in rep["claims"] if c["kind"] == "flag")
     assert flag["status"] == "unverified" and rc == 0
@@ -174,8 +175,8 @@ def test_unparseable_script_flags_are_unverified_not_missing(tmp_path):
 def test_run_help_reads_flags_from_help_output(tmp_path):
     (tmp_path / "tool").mkdir()
     script = "import sys\nif '--help' in sys.argv:\n    print('usage: run [--fast]')\n"
-    (tmp_path / "tool" / "run.py").write_text(script)
-    (tmp_path / "README.md").write_text("```bash\npython3 tool/run.py --fast --slow\n```\n")
+    (tmp_path / "tool" / "run.py").write_text(script, encoding="utf-8")
+    (tmp_path / "README.md").write_text("```bash\npython3 tool/run.py --fast --slow\n```\n", encoding="utf-8")
     _, rep = run_json(mod, [str(tmp_path), "--json", "--run-help"])
     status = {c["claim"]: c["status"] for c in rep["claims"] if c["kind"] == "flag"}
     assert status == {"--fast (tool/run.py)": "verified", "--slow (tool/run.py)": "missing"}
@@ -184,7 +185,7 @@ def test_run_help_reads_flags_from_help_output(tmp_path):
 def test_external_names_are_not_claims(tmp_path):
     (tmp_path / "README.md").write_text(
         "Install with `pip install requests` and read `os.environ`; see `owner/repo` and `application/json`.\n"
-        "```bash\ngit clone https://example.com/x.git\nnpx something --flag\n```\n")
+        "```bash\ngit clone https://example.com/x.git\nnpx something --flag\n```\n", encoding="utf-8")
     rc, rep = run_json(mod, [str(tmp_path), "--json"])
     assert rep["claims"] == [] and rc == 0
 
@@ -196,9 +197,9 @@ def test_help_exits_zero():
 
 def test_cd_into_a_subproject_checks_its_package_json(tmp_path):
     (tmp_path / "web").mkdir()
-    (tmp_path / "web" / "package.json").write_text('{"scripts": {"build": "tsc"}}')
+    (tmp_path / "web" / "package.json").write_text('{"scripts": {"build": "tsc"}}', encoding="utf-8")
     (tmp_path / "README.md").write_text(
-        "```bash\ncd web && npm run build && npm run lint\n```\n\nOr just `npm run build`.\n")
+        "```bash\ncd web && npm run build && npm run lint\n```\n\nOr just `npm run build`.\n", encoding="utf-8")
     _, rep = run_json(mod, [str(tmp_path), "--json"])
     status = {(c["claim"], c["line"]): c["status"] for c in rep["claims"]}
     assert status[("npm run build", 2)] == "verified"
@@ -209,13 +210,13 @@ def test_cd_into_a_subproject_checks_its_package_json(tmp_path):
 def test_honest_unverified_cases(tmp_path):
     (tmp_path / "pkg").mkdir()
     (tmp_path / "pkg" / "a.py").write_text(
-        "import argparse\np = argparse.ArgumentParser()\np.add_argument('--mode', default='fast')\n")
+        "import argparse\np = argparse.ArgumentParser()\np.add_argument('--mode', default='fast')\n", encoding="utf-8")
     (tmp_path / "pkg" / "b.py").write_text(
-        "import argparse\np = argparse.ArgumentParser()\np.add_argument('--mode', default='slow')\n")
-    (tmp_path / "pkg" / "tools.ts").write_text('server.tool("search_items", handler);\n')
+        "import argparse\np = argparse.ArgumentParser()\np.add_argument('--mode', default='slow')\n", encoding="utf-8")
+    (tmp_path / "pkg" / "tools.ts").write_text('server.tool("search_items", handler);\n', encoding="utf-8")
     (tmp_path / "README.md").write_text(
         "`--mode` defaults to `medium`.\n\n`b.py --mode` defaults to `fast`.\n\n"
-        "Call `search_items` or `vanished_items`. Edit `settings.local.json`.\n")
+        "Call `search_items` or `vanished_items`. Edit `settings.local.json`.\n", encoding="utf-8")
     _, rep = run_json(mod, [str(tmp_path), "--json"])
     status = {c["claim"]: (c["status"], c["detail"]) for c in rep["claims"]}
     assert status["--mode default medium"][0] == "unverified"

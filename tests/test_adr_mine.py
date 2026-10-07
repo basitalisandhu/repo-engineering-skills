@@ -59,7 +59,7 @@ def test_stubs_are_madr_and_cite_their_source(history, tmp_path):
     repo, shas = history
     out_dir = tmp_path / "adr"
     out_dir.mkdir()
-    (out_dir / "0007-existing.md").write_text("# 7. Existing\n\n- Status: accepted\n")
+    (out_dir / "0007-existing.md").write_text("# 7. Existing\n\n- Status: accepted\n", encoding="utf-8")
     rc, rep = run_json(mod, [str(repo), "--json", "--out-dir", str(out_dir)])
     assert rc == 0
     names = sorted(p.name for p in out_dir.iterdir())

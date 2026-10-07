@@ -99,7 +99,7 @@ def test_consistent_release_is_clean(tmp_path):
 
 def test_custom_chore_pattern_and_notes_file(repo, tmp_path):
     notes = tmp_path / "notes.md"
-    notes.write_text("- CSV export for reports (#3)\n")
+    notes.write_text("- CSV export for reports (#3)\n", encoding="utf-8")
     rc, rep = run_json(mod, [str(repo), "--from", "v0.1.0", "--to", "v0.2.0", "--json", "--notes", str(notes),
                              "--chore-pattern", "^(fix|feat: retry|chore|Release)"])
     assert not any(f["rule"] in {"REL-COMMIT-UNNOTED", "REL-NOTE-UNMATCHED"} for f in rep["findings"])

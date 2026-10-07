@@ -20,10 +20,12 @@ def test_inventory_of_the_fixture():
 
 
 def test_manifest_entry_points_and_lockfiles(tmp_path):
-    (tmp_path / "package.json").write_text('{"name": "x", "bin": {"x": "bin/x.js"}, "scripts": {"test": "vitest"}}')
-    (tmp_path / "package-lock.json").write_text("{}")
-    (tmp_path / "pyproject.toml").write_text('[project]\nname="y"\n[project.scripts]\ny = "y.cli:main"\n')
-    (tmp_path / "Dockerfile").write_text("FROM python:3.11\nENTRYPOINT [\"y\"]\n")
+    (tmp_path / "package.json").write_text('{"name": "x", "bin": {"x": "bin/x.js"}, "scripts": {"test": "vitest"}}',
+                                           encoding="utf-8")
+    (tmp_path / "package-lock.json").write_text("{}", encoding="utf-8")
+    (tmp_path / "pyproject.toml").write_text('[project]\nname="y"\n[project.scripts]\ny = "y.cli:main"\n',
+                                             encoding="utf-8")
+    (tmp_path / "Dockerfile").write_text("FROM python:3.11\nENTRYPOINT [\"y\"]\n", encoding="utf-8")
     rc, rep = run_json(mod, [str(tmp_path), "--json"])
     kinds = {e["kind"] for e in rep["entry_points"]}
     assert {"npm_bin", "npm_script", "console_script", "docker_entrypoint"} <= kinds

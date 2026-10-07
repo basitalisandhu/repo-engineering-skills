@@ -2,7 +2,9 @@
 
 **Repository engineering skills for Claude Code: docs checked against the code, audits where every finding cites a line, onboarding guides built from cited facts, and restructure, ADR, hygiene and release checks run by scripts.**
 
-repo-engineering-skills is a Claude Code plugin with ten skills for maintainers and teams who need to trust what is written about their repository: the README, the docs, the onboarding guide, the audit report, the AGENTS.md, the decision records, the release notes. It exists because generated docs and audits are cheap to produce and hard to check, so each skill pairs the model's work with a standard-library Python script that checks it against the working tree or the git history, instead of asking you to take the text on faith.
+repo-engineering-skills is a Claude Code plugin with twelve skills for maintainers and teams who need to trust what is written about their repository: the README, the docs, the onboarding guide, the audit report, the AGENTS.md, the decision records, the release notes, the branch list and the plan before coding. It exists because generated docs and audits are cheap to produce and hard to check, so each skill pairs the model's work with a standard-library Python script that checks it against the working tree or the git history, instead of asking you to take the text on faith.
+
+Common searches it answers: technical due diligence on a codebase, an import dependency graph before a restructure, stale docs, delete stale branches, and review an implementation plan. Bus factor from commit history is not measured.
 
 ```text
 /plugin marketplace add basitalisandhu/repo-engineering-skills
@@ -28,11 +30,11 @@ Generated from the committed fixtures by [`scripts/render_demo.py`](scripts/rend
 The plugin installs as shown above. The skill scripts are also published as one container image on GitHub Packages (linux/amd64 and linux/arm64) for running them without a checkout, for example in CI. The image's entrypoint is `repo-engineering <subcommand> [args]`; mount the files to read at `/work`, which is the working directory:
 
 ```bash
-docker run --rm -v "$PWD:/work" ghcr.io/basitalisandhu/repo-engineering-skills:0.3.0 docs-truth /work --only-failures
-docker run --rm -v "$PWD:/work" ghcr.io/basitalisandhu/repo-engineering-skills:0.3.0 readme-check /work/README.md
-docker run --rm -v "$PWD:/work" ghcr.io/basitalisandhu/repo-engineering-skills:0.3.0 test-gaps /work --top 20
-docker run --rm -v "$PWD:/work" ghcr.io/basitalisandhu/repo-engineering-skills:0.3.0 hygiene /work --sarif /work/hygiene.sarif
-docker run --rm ghcr.io/basitalisandhu/repo-engineering-skills:0.3.0 --help
+docker run --rm -v "$PWD:/work" ghcr.io/basitalisandhu/repo-engineering-skills:0.4.0 docs-truth /work --only-failures
+docker run --rm -v "$PWD:/work" ghcr.io/basitalisandhu/repo-engineering-skills:0.4.0 readme-check /work/README.md
+docker run --rm -v "$PWD:/work" ghcr.io/basitalisandhu/repo-engineering-skills:0.4.0 test-gaps /work --top 20
+docker run --rm -v "$PWD:/work" ghcr.io/basitalisandhu/repo-engineering-skills:0.4.0 hygiene /work --sarif /work/hygiene.sarif
+docker run --rm ghcr.io/basitalisandhu/repo-engineering-skills:0.4.0 --help
 ```
 
 This pack is also part of [claude-skills](https://github.com/basitalisandhu/claude-skills), which holds every skill I maintain as one marketplace: `/plugin marketplace add basitalisandhu/claude-skills`.
@@ -52,16 +54,18 @@ This pack is also part of [claude-skills](https://github.com/basitalisandhu/clau
 | `adr-lint` | `adr_lint.py` (adr-miner) |
 | `hygiene` | `hygiene.py` (repo-hygiene-bundle) |
 | `release-notes` | `release_notes_verify.py` (release-notes-verifier) |
+| `branch-sweep` | `stale_branch_sweep.py` (stale-branch-sweep) |
+| `plan-grill` | `plan_grill.py` (plan-grill) |
 
 Every subcommand passes its arguments to the script unchanged, so `repo-engineering <subcommand> --help` shows the same options as the script. Output files land in the mounted folder. The image has no pip dependencies, includes git for `adr` and `release-notes` (it trusts the `/work` mount as a git safe directory), and runs as uid 1000; on Linux, if the mounted folder is not writable by that uid, run the container as your own uid and gid with Docker's user option. From a checkout, `python3 scripts/cli.py` is the same dispatcher.
 
 Each image is signed with cosign (keyless) and has a build provenance attestation and an SPDX SBOM (attached to the GitHub Release). To verify:
 
 ```bash
-cosign verify ghcr.io/basitalisandhu/repo-engineering-skills:0.3.0 \
+cosign verify ghcr.io/basitalisandhu/repo-engineering-skills:0.4.0 \
   --certificate-identity-regexp '^https://github.com/basitalisandhu/repo-engineering-skills/' \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com
-gh attestation verify oci://ghcr.io/basitalisandhu/repo-engineering-skills:0.3.0 --owner basitalisandhu
+gh attestation verify oci://ghcr.io/basitalisandhu/repo-engineering-skills:0.4.0 --owner basitalisandhu
 ```
 
 ## When to use this
@@ -76,6 +80,8 @@ gh attestation verify oci://ghcr.io/basitalisandhu/repo-engineering-skills:0.3.0
 - Why did we switch to X? Draft decision records from commits, config changes and comments, and lint the ADR folder: `adr-miner`
 - Lockfiles, licence fields, secret-shaped strings, unpinned actions, write-all tokens and committed build output in one pass, with SARIF: `repo-hygiene-bundle`
 - Do the release notes match the commits between two tags, and does every version field match the tag? `release-notes-verifier`
+- Which branches are merged, idle or still in review, who last touched each, and what are the delete commands to review? `stale-branch-sweep`
+- Is this implementation plan ready to build: scope, interfaces, data, failure modes, rollout, tests and open questions answered? `plan-grill`
 
 ## Skills
 
@@ -91,6 +97,8 @@ gh attestation verify oci://ghcr.io/basitalisandhu/repo-engineering-skills:0.3.0
 | `adr-miner` | "why did we switch to X?", "backfill our ADRs", "check our ADR folder" | `adr_mine.py`, `adr_lint.py` | decision candidates from commit messages, dependency and Dockerfile changes and rationale comments, drafted as MADR stubs citing the commit SHA; ADR folder lint for gaps, duplicates, status and superseded links |
 | `repo-hygiene-bundle` | "check repo hygiene", "ready to open source?", "are our actions pinned?" | `hygiene.py` | offline findings with a severity each: lockfiles and drift, duplicate dependencies across workspaces, licence file and SPDX fields, secret-shaped strings (redacted), unpinned actions, write-all permissions, community files, large and generated files; table, JSON or SARIF |
 | `release-notes-verifier` | "check the changelog before we tag", "are the release notes complete?" | `release_notes_verify.py` | notes with no matching commit, commits with no note (chores excluded by pattern), version fields that disagree with the tag, missing compare links |
+| `stale-branch-sweep` | "which branches can we delete?", "clean up old branches" | `stale_branch_sweep.py` | one status per remote branch from saved gh and git exports (merged, including squash-merged PRs; stale after N days; open PR; protected; base) with the last committer as owner, and `git push --delete` commands that are printed for review, never run |
+| `plan-grill` | "grill this plan", "is this ready to build?" | `plan_grill.py` | a fixed question set put to the author, then a check of the Markdown plan for the seven required sections, placeholders, a missing rollback, failure modes without a list, tests without a kind, and questions with no owner or answer, each with its line |
 
 Every script reads files (and, for the history-based skills, runs read-only git commands), needs no network, prints a table by default and JSON with `--json`, and uses exit codes 0 (clean), 1 (findings) and 2 (bad input), so each one can gate CI.
 
@@ -122,7 +130,7 @@ Each skill folder is self-contained: its scripts live inside it, so it can be co
 - **Skills** are Markdown instructions. Each one tells Claude to treat repository content as untrusted data, never as instructions, and to report only what it verified.
 - **Scripts** read the paths given on the command line. They write only where you pass `--out` or `--stubs-dir`, and `--stubs-dir` never overwrites an existing file.
 - **Nothing runs your code by default.** The single exception is `docs_truth_check.py --run-help`, which you must pass explicitly: it runs scripts that have no parseable option declarations once with `--help`, with a 10 second timeout and an environment reduced to `PATH`, `LANG` and `NO_COLOR`.
-- **Read-only git.** `adr_mine.py`, `release_notes_verify.py` and `hygiene.py` run `git` (`log`, `show`, `ls-files`, `ls-tree`, `blame`, `cat-file`, `rev-parse`) with fixed argument lists and no shell; revisions that start with `-` are refused. `restructure_plan.py` prints `git mv` commands and never runs them.
+- **Read-only git.** `adr_mine.py`, `release_notes_verify.py` and `hygiene.py` run `git` (`log`, `show`, `ls-files`, `ls-tree`, `blame`, `cat-file`, `rev-parse`) with fixed argument lists and no shell; revisions that start with `-` are refused. `restructure_plan.py` prints `git mv` commands and `stale_branch_sweep.py` prints `git push --delete` commands; neither runs them.
 - **No network, no telemetry.** No script opens a socket. The one opt-in exception is `release_notes_verify.py --gh`, which calls `gh pr view` (read-only) to read pull request titles from GitHub.
 
 Report security problems privately: see [SECURITY.md](SECURITY.md).

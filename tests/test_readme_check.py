@@ -33,14 +33,14 @@ def test_screen_size_and_min_score(tmp_path):
 
 def test_long_opening_sentence_is_noted(tmp_path):
     p = tmp_path / "README.md"
-    p.write_text("# x\n\n" + " ".join(["word"] * 50) + ".\n")
+    p.write_text("# x\n\n" + " ".join(["word"] * 50) + ".\n", encoding="utf-8")
     _, rep = run_json(mod, [str(p), "--json"])
     assert rep["notes"] and "50 words" in rep["notes"][0]
 
 
 def test_hype_inside_code_is_ignored_and_errors(tmp_path):
     p = tmp_path / "README.md"
-    p.write_text("# x\n\nx is a tool.\n\n```bash\necho powerful\n```\n")
+    p.write_text("# x\n\nx is a tool.\n\n```bash\necho powerful\n```\n", encoding="utf-8")
     _, rep = run_json(mod, [str(p), "--json"])
     assert rep["hype_words"] == []
     assert run_main(mod, [str(tmp_path / "none.md")])[0] == 2
@@ -51,6 +51,7 @@ def test_hype_inside_code_is_ignored_and_errors(tmp_path):
 def test_plugin_install_in_a_text_block_counts_as_install(tmp_path):
     p = tmp_path / "README.md"
     p.write_text("# x\n\nx is a plugin for teams who review docs, instead of by hand.\n\n```text\n"
-                 "/plugin marketplace add o/x\n/plugin install x@x\n```\n\n## Usage\n\nAsk in issues.\n")
+                 "/plugin marketplace add o/x\n/plugin install x@x\n```\n\n## Usage\n\nAsk in issues.\n",
+                 encoding="utf-8")
     rc, rep = run_json(mod, [str(p), "--json"])
     assert rep["elements"]["install"]["status"] == "first screen" and rc == 0

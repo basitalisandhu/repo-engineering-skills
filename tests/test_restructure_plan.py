@@ -77,20 +77,20 @@ def test_nothing_is_moved_and_commands_are_quoted(tmp_path):
     assert tree_digest(REPO) == before
     (tmp_path / "my pkg").mkdir()
     (tmp_path / "other").mkdir()
-    (tmp_path / "my pkg" / "helper.py").write_text("X = 1\n")
-    (tmp_path / "other" / "use.py").write_text("import importlib\n")
+    (tmp_path / "my pkg" / "helper.py").write_text("X = 1\n", encoding="utf-8")
+    (tmp_path / "other" / "use.py").write_text("import importlib\n", encoding="utf-8")
     (tmp_path / "web").mkdir()
-    (tmp_path / "web" / "one.js").write_text("export const one = 1;\n")
+    (tmp_path / "web" / "one.js").write_text("export const one = 1;\n", encoding="utf-8")
     (tmp_path / "ui").mkdir()
-    (tmp_path / "ui" / "main.js").write_text("import { one } from '../web/one';\n")
+    (tmp_path / "ui" / "main.js").write_text("import { one } from '../web/one';\n", encoding="utf-8")
     rc, rep = run_json(mod, [str(tmp_path), "--goal", "split", "--json"])
     assert rep["commands"] == ["git mv web/one.js ui/one.js"]
 
 
 def test_fail_on_cycles_and_bad_input(tmp_path):
     assert run_main(mod, [str(REPO), "--fail-on-cycles"])[0] == 1
-    (tmp_path / "a.py").write_text("import b\n")
-    (tmp_path / "b.py").write_text("X = 1\n")
+    (tmp_path / "a.py").write_text("import b\n", encoding="utf-8")
+    (tmp_path / "b.py").write_text("X = 1\n", encoding="utf-8")
     assert run_main(mod, [str(tmp_path), "--fail-on-cycles"])[0] == 0
     assert run_main(mod, [str(tmp_path / "missing")])[0] == 2
     assert run_main(mod, [str(REPO), "--goal", "explode"])[0] == 2
@@ -106,15 +106,15 @@ def test_tests_are_left_out_unless_asked():
 def test_js_resolution_forms(tmp_path):
     src = tmp_path / "src"
     (src / "lib").mkdir(parents=True)
-    (src / "lib" / "index.ts").write_text("export const lib = 1;\n")
-    (src / "util.ts").write_text("export const u = 1;\n")
-    (src / "lazy.tsx").write_text("export default 1;\n")
+    (src / "lib" / "index.ts").write_text("export const lib = 1;\n", encoding="utf-8")
+    (src / "util.ts").write_text("export const u = 1;\n", encoding="utf-8")
+    (src / "lazy.tsx").write_text("export default 1;\n", encoding="utf-8")
     (src / "main.ts").write_text(
         "import { lib } from './lib';\n"
         "export { u } from './util.js';\n"
         "const lazy = () => import('./lazy');\n"
         "// import { gone } from './commented-out';\n"
-        "import React from 'react';\nimport { x } from '@scope/pkg/sub';\n")
+        "import React from 'react';\nimport { x } from '@scope/pkg/sub';\n", encoding="utf-8")
     rc, rep = run_json(mod, [str(tmp_path), "--json", "--top", "50"])
     main = next(r for r in rep["coupling"] if r["file"] == "src/main.ts")
     assert main["fan_out"] == 3 and main["external"] == 2
@@ -124,10 +124,10 @@ def test_js_resolution_forms(tmp_path):
 def test_merge_goal_folds_a_small_single_consumer_package(tmp_path):
     for pkg in ("core", "tiny"):
         (tmp_path / pkg).mkdir()
-    (tmp_path / "core" / "a.py").write_text("from tiny.helper import h\n")
-    (tmp_path / "core" / "b.py").write_text("from tiny.helper import h\n")
-    (tmp_path / "core" / "c.py").write_text("X = 1\n")
-    (tmp_path / "tiny" / "helper.py").write_text("def h():\n    return 1\n")
+    (tmp_path / "core" / "a.py").write_text("from tiny.helper import h\n", encoding="utf-8")
+    (tmp_path / "core" / "b.py").write_text("from tiny.helper import h\n", encoding="utf-8")
+    (tmp_path / "core" / "c.py").write_text("X = 1\n", encoding="utf-8")
+    (tmp_path / "tiny" / "helper.py").write_text("def h():\n    return 1\n", encoding="utf-8")
     rc, rep = run_json(mod, [str(tmp_path), "--goal", "merge", "--json"])
     assert [(m["file"], m["to"], m["blast_radius"]) for m in rep["moves"]] == [("tiny/helper.py", "core", 2)]
     assert rep["commands"] == ["git mv tiny/helper.py core/helper.py"]
@@ -136,9 +136,9 @@ def test_merge_goal_folds_a_small_single_consumer_package(tmp_path):
 def test_name_collision_goes_to_a_subfolder_with_mkdir(tmp_path):
     for pkg in ("api", "reports"):
         (tmp_path / pkg).mkdir()
-    (tmp_path / "api" / "fmt.py").write_text("X = 1\n")
-    (tmp_path / "api" / "routes.py").write_text("from reports.fmt import f\nfrom api.fmt import X\n")
-    (tmp_path / "reports" / "fmt.py").write_text("def f():\n    return 1\n")
+    (tmp_path / "api" / "fmt.py").write_text("X = 1\n", encoding="utf-8")
+    (tmp_path / "api" / "routes.py").write_text("from reports.fmt import f\nfrom api.fmt import X\n", encoding="utf-8")
+    (tmp_path / "reports" / "fmt.py").write_text("def f():\n    return 1\n", encoding="utf-8")
     rc, rep = run_json(mod, [str(tmp_path), "--goal", "split", "--json"])
     assert rep["commands"] == ["mkdir -p api/reports", "git mv reports/fmt.py api/reports/fmt.py"]
     assert "already exists" in rep["moves"][0]["note"]
