@@ -4,6 +4,8 @@ All notable changes to this project are documented here. The format follows Keep
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-10-09
+
 ### Changed
 
 - Resolve literal setuptools and hatch dynamic versions without executing code,
@@ -84,7 +86,8 @@ The skill scripts are published as a container image on GitHub Packages, using o
 - `untested-entry-points`: `test_gaps.py` ranks untested public functions and entry points for Python, JavaScript and TypeScript, and writes skipped or todo characterisation test stubs for pytest, unittest, jest, vitest and node:test.
 - Fixture repositories with planted defects for every script, an offline pytest suite, `scripts/validate_plugin.py`, and a CI workflow that runs the tests, ruff, the validator, `claude plugin validate --strict`, and the docs and README checkers on this repository.
 
-[Unreleased]: https://github.com/basitalisandhu/repo-engineering-skills/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/basitalisandhu/repo-engineering-skills/compare/v0.4.1...HEAD
+[0.4.1]: https://github.com/basitalisandhu/repo-engineering-skills/compare/v0.4.0...v0.4.1
 [0.3.0]: https://github.com/basitalisandhu/repo-engineering-skills/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/basitalisandhu/repo-engineering-skills/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/basitalisandhu/repo-engineering-skills/compare/v0.1.0...v0.1.1

@@ -30,11 +30,11 @@ Generated from the committed fixtures by [`scripts/render_demo.py`](scripts/rend
 The plugin installs as shown above. The skill scripts are also published as one container image on GitHub Packages (linux/amd64 and linux/arm64) for running them without a checkout, for example in CI. The image's entrypoint is `repo-engineering <subcommand> [args]`; mount the files to read at `/work`, which is the working directory:
 
 ```bash
-docker run --rm -v "$PWD:/work" ghcr.io/basitalisandhu/repo-engineering-skills:0.4.0 docs-truth /work --only-failures
-docker run --rm -v "$PWD:/work" ghcr.io/basitalisandhu/repo-engineering-skills:0.4.0 readme-check /work/README.md
-docker run --rm -v "$PWD:/work" ghcr.io/basitalisandhu/repo-engineering-skills:0.4.0 test-gaps /work --top 20
-docker run --rm -v "$PWD:/work" ghcr.io/basitalisandhu/repo-engineering-skills:0.4.0 hygiene /work --sarif /work/hygiene.sarif
-docker run --rm ghcr.io/basitalisandhu/repo-engineering-skills:0.4.0 --help
+docker run --rm -v "$PWD:/work" ghcr.io/basitalisandhu/repo-engineering-skills:0.4.1 docs-truth /work --only-failures
+docker run --rm -v "$PWD:/work" ghcr.io/basitalisandhu/repo-engineering-skills:0.4.1 readme-check /work/README.md
+docker run --rm -v "$PWD:/work" ghcr.io/basitalisandhu/repo-engineering-skills:0.4.1 test-gaps /work --top 20
+docker run --rm -v "$PWD:/work" ghcr.io/basitalisandhu/repo-engineering-skills:0.4.1 hygiene /work --sarif /work/hygiene.sarif
+docker run --rm ghcr.io/basitalisandhu/repo-engineering-skills:0.4.1 --help
 ```
 
 This pack is also part of [claude-skills](https://github.com/basitalisandhu/claude-skills), which holds every skill I maintain as one marketplace: `/plugin marketplace add basitalisandhu/claude-skills`.
@@ -62,10 +62,10 @@ Every subcommand passes its arguments to the script unchanged, so `repo-engineer
 Each image is signed with cosign (keyless) and has a build provenance attestation and an SPDX SBOM (attached to the GitHub Release). To verify:
 
 ```bash
-cosign verify ghcr.io/basitalisandhu/repo-engineering-skills:0.4.0 \
+cosign verify ghcr.io/basitalisandhu/repo-engineering-skills:0.4.1 \
   --certificate-identity-regexp '^https://github.com/basitalisandhu/repo-engineering-skills/' \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com
-gh attestation verify oci://ghcr.io/basitalisandhu/repo-engineering-skills:0.4.0 --owner basitalisandhu
+gh attestation verify oci://ghcr.io/basitalisandhu/repo-engineering-skills:0.4.1 --owner basitalisandhu
 ```
 
 ## When to use this

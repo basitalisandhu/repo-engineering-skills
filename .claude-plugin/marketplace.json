@@ -7,14 +7,14 @@
     "url": "https://github.com/basitalisandhu"
   },
   "metadata": {
-    "version": "0.4.0"
+    "version": "0.4.1"
   },
   "plugins": [
     {
       "name": "repo-engineering",
       "source": "./plugins/repo-engineering",
       "description": "Twelve skills, each with a tested standard-library script: docs-truth-check, cited-codebase-audit, agent-context-writer, readme-who-what-why, untested-entry-points, repo-onboarding-guide, restructure-planner, adr-miner, repo-hygiene-bundle, release-notes-verifier, stale-branch-sweep and plan-grill.",
-      "version": "0.4.0",
+      "version": "0.4.1",
       "author": {
         "name": "Muhammad Basit Ali",
         "url": "https://github.com/basitalisandhu"
