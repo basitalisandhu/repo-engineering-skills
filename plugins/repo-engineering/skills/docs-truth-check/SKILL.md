@@ -72,7 +72,7 @@ Exit codes: 0 no drift, 1 drift at the `--fail-on` level, 2 bad input.
 | `default` | "`--flag` defaults to `X`", "`ENV_NAME` defaults to `X`", "(default: X)" | the code's literal CLI or environment lookup default equals X, including `os.environ.get`, `os.getenv`, or their direct imports from `os`; non-literal environment defaults are unverified |
 | `env` | `UPPER_CASE_NAME` in backticks | the name appears in a code or config file |
 | `symbol` | `name()`, `Class.method`, `snake_case`, `camelCase` in backticks | defined in Python (`ast`), exported or declared in JS/TS (regex), or a key in TOML, JSON, YAML, INI or `.env` files |
-| `version` | `<project>==X.Y.Z`, `<project>@X.Y.Z`, "version X.Y.Z" on a line naming the project | equals the version in `pyproject.toml` or `package.json` |
+| `version` | `<project>==X.Y.Z`, `<project>@X.Y.Z`, "version X.Y.Z" on a line naming the project | equals the version in `pyproject.toml` or `package.json`; dynamic versions are read from `[tool.setuptools.dynamic]` attr or `[tool.hatch.version]` path without executing code and reported `unverified` when not a plain string literal |
 | `target` | `npm run X`, `make X`, also after `cd dir &&` | the package.json script or Makefile target exists in that directory |
 
 Names that clearly belong to other projects (`os.environ`, `owner/repo`, `pip install requests`, Python builtins) are not treated as claims about this repository.

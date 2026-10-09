@@ -3,6 +3,46 @@ from conftest import FIXTURES, load_script, run_json, run_main
 mod = load_script("docs-truth-check", "docs_truth_check.py")
 REPO = FIXTURES / "docs_truth" / "sample_repo"
 
+
+def test_setuptools_dynamic_attr_resolves_literal_without_executing(tmp_path):
+    (tmp_path / "pyproject.toml").write_text(
+        '[project]\nname = "example"\ndynamic = ["version"]\n'
+        '[tool.setuptools.dynamic]\nversion = {attr = "example.__version__"}\n'
+    )
+    package = tmp_path / "src/example"
+    package.mkdir(parents=True)
+    (package / "__init__.py").write_text(
+        'raise RuntimeError("must not execute")\n__version__ = "1.2.3"\n'
+    )
+    (tmp_path / "README.md").write_text("example==1.2.3\nexample==1.2.0\n")
+    _, rep = run_json(mod, [str(tmp_path), "--json"])
+    assert {(c["claim"], c["status"]) for c in rep["claims"] if c["kind"] == "version"} == {
+        ("example 1.2.3", "verified"), ("example 1.2.0", "stale"),
+    }
+
+
+def test_hatch_dynamic_path_resolves_literal_and_unverified_nonliteral(tmp_path):
+    (tmp_path / "pyproject.toml").write_text(
+        '[project]\nname = "example"\ndynamic = ["version"]\n'
+        '[tool.hatch.version]\npath = "version.py"\n'
+    )
+    version = tmp_path / "version.py"
+    version.write_text('__version__: str = "2.3.4"\n')
+    (tmp_path / "README.md").write_text("example version 2.3.4\n")
+    _, rep = run_json(mod, [str(tmp_path), "--json"])
+    assert any(c["kind"] == "version" and c["status"] == "verified" for c in rep["claims"])
+    version.write_text('__version__ = calculate_version()\n')
+    _, rep = run_json(mod, [str(tmp_path), "--json"])
+    claim = next(c for c in rep["claims"] if c["kind"] == "version")
+    assert claim["status"] == "unverified" and claim["detail"]
+
+
+def test_unconfigured_dynamic_version_is_not_silently_skipped(tmp_path):
+    (tmp_path / "pyproject.toml").write_text('[project]\nname="example"\ndynamic=["version"]\n')
+    (tmp_path / "README.md").write_text("example@3.2.1\n")
+    _, rep = run_json(mod, [str(tmp_path), "--json"])
+    assert any(c["kind"] == "version" and c["status"] == "unverified" for c in rep["claims"])
+
 PLANTED = {
     ("version", "greeter 1.1.0", "stale"),
     ("default", "--retries default 3", "stale"),

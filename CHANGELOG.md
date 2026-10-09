@@ -6,6 +6,8 @@ All notable changes to this project are documented here. The format follows Keep
 
 ### Changed
 
+- Resolve literal setuptools and hatch dynamic versions without executing code,
+  and mark unresolved version claims as unverified instead of skipping them.
 - Skills that run a script through `${CLAUDE_PLUGIN_ROOT}` now say how to run it by the skill folder's path when the skill is copied without the plugin system (portability findings, #25).
 
 ## [0.4.0] - 2026-10-05
