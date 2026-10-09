@@ -35,6 +35,8 @@ Report only what the script or a file you opened verified. Every claim carries o
 
    By default it reads `README*`, `CONTRIBUTING*`, `AGENTS.md` and `CLAUDE.md` at the root plus `docs/**/*.md`. Narrow or widen with `--docs 'docs/*.md'` (repeatable) and leave generated or vendored trees out with `--exclude`.
 
+   If this skill was copied into `.claude/skills/` without the plugin system, `${CLAUDE_PLUGIN_ROOT}` is empty. Replace `${CLAUDE_PLUGIN_ROOT}/skills/docs-truth-check` with the path to this skill's folder, for example `.claude/skills/docs-truth-check`, and run the command from the repository root. The same applies to any other script command in this skill.
+
 2. **Read the failures first.** The table sorts `stale`, then `missing`, then `unverified`, then `verified`. Use `--only-failures` for a short list.
 
 3. **Confirm each failure by opening the cited file.** For a `stale` default, quote the `add_argument(...)` line. For a `missing` path, list the directory and look for the renamed file (the detail column names close siblings when it finds them). For a `missing` symbol, grep for it; a symbol defined only in a language the script does not parse stays a doc problem to check by hand, not a confirmed drift.
