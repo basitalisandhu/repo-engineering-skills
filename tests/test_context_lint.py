@@ -43,6 +43,23 @@ def test_pyproject_console_script_and_requirements(tmp_path):
     assert {f["code"] for f in rep["findings"]} == {"CTX-MANIFEST", "CTX-DEPS", "CTX-RUNTIME"}
 
 
+def test_pdm_scripts_and_uv_deps(tmp_path):
+    (tmp_path / "pyproject.toml").write_text(
+        '[tool.pdm.scripts]\nbuild = "python -m build"\ntest = "pytest"\n'
+        '[tool.uv]\ndev-dependencies = ["pytest>=8.0", "ruff"]\n')
+    ctx = tmp_path / "AGENTS.md"
+    ctx.write_text("Run `pdm run test` and `pdm run unknown_script`.\nWe use pytest and ruff.\n")
+    rc, rep = run_json(mod, [str(ctx), str(tmp_path), "--json"])
+    # pdm run test is flagged because it's in pdm.scripts. pdm run unknown_script is NOT flagged.
+    # pytest and ruff are flagged under CTX-DEPS.
+    codes = {f["code"] for f in rep["findings"]}
+    assert "CTX-MANIFEST" in codes
+    assert "CTX-DEPS" in codes
+    messages = " ".join(f["message"] for f in rep["findings"])
+    assert "pdm run test" in messages
+    assert "pdm run unknown_script" not in messages
+
+
 def test_text_output_and_errors(tmp_path):
     rc, out, _ = run_main(mod, [str(BASE / "AGENTS_bad.md"), str(REPO)])
     assert rc == 1 and "CTX-TREE" in out and "within budget" in out
