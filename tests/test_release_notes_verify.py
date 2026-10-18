@@ -137,3 +137,18 @@ def test_sha_references_and_unbracketed_heading_without_link(tmp_path):
     assert rep["notes"][0]["commits"] == [sha[:12]]
     assert [f["rule"] for f in rep["findings"]] == ["REL-LINK"]
     assert "no compare or release link" in rep["findings"][0]["detail"]
+
+
+def test_backticked_variables_and_closing_keywords_in_the_body_match(tmp_path):
+    repo = tmp_path / "repo"
+    git_commit(repo, "Initial commit", {"CHANGELOG.md": "# Changelog\n"})
+    git_tag(repo, "v1.0.0")
+    git_commit(repo, "Add fallback note for running scripts without CLAUDE_PLUGIN_ROOT (#26)", {"a.md": "a\n"})
+    git_commit(repo, "Tidy the parser\n\nFixes #31", {"b.py": "x = 1\n"})
+    git_commit(repo, "Release 1.1.0", {"CHANGELOG.md": "# Changelog\n\n## [1.1.0]\n\n"
+                                                       "- Scripts under `${CLAUDE_PLUGIN_ROOT}` say how to run from a "
+                                                       "copied folder (#25).\n"
+                                                       "- Parser accepts trailing commas (#31).\n"})
+    git_tag(repo, "v1.1.0")
+    rc, rep = run_json(mod, [str(repo), "--from", "v1.0.0", "--to", "v1.1.0", "--json"])
+    assert [f["rule"] for f in rep["findings"] if f["rule"].startswith("REL-NOTE") or "UNNOTED" in f["rule"]] == []

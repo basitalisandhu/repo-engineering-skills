@@ -4,6 +4,25 @@ All notable changes to this project are documented here. The format follows Keep
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-10-18
+
+### Added
+
+- `adr-miner`: `adr_mine.py --exclude GLOB` (repeatable) leaves test fixtures and vendored code out of config and comment mining; on this repository it removes two candidates that came from fixture files.
+- `adr-miner`: `adr_lint.py` reports a run of missing numbers as one `ADR-GAP` finding ("no ADRs numbered 0003 to 0008"), warns `ADR-EMPTY` when the folder holds no `NNNN-title.md` file, reports an unreadable ADR as `ADR-READ`, and accepts `.MD` file names.
+- README: a real output sample on the first screen.
+
+### Fixed
+
+- `cited-codebase-audit`: `repo_facts.py` no longer crashes on a `package.json` or `pyproject.toml` whose `scripts`, `bin` or `project` is the wrong type, finds `if __name__=="__main__":` without spaces, lower-case Dockerfile `entrypoint` and `[project.gui-scripts]`, and exits 2 with a message when `--out` cannot be written.
+- `cited-codebase-audit`: `audit_validate.py` exits 2 on a report that is not UTF-8, on `--min-accept` outside 0 to 100 and on an unwritable `--out`, and rejects a citation path with a NUL byte instead of crashing.
+- `readme-who-what-why`: `readme_check.py` exits 2 on a file that is not UTF-8, skips YAML front matter, does not take a setext heading for the opening sentence, ignores hype words inside inline code, notes an empty file and a code fence that is never closed (whose install command still counts).
+- `release-notes-verifier`: a note naming `` `${VAR}` `` now matches a commit naming `VAR`, and `Fixes #N` or `Closes #N` in a commit body links the commit to a note citing `#N`. This repository's own 0.4.1 notes were reported as unmatched before.
+
+### Changed
+
+- Descriptions of `adr-miner`, `docs-truth-check` and `stale-branch-sweep` name their neighbours more precisely, checked against the labelled trigger prompts in the hub's research notes.
+
 ## [0.4.1] - 2026-10-09
 
 ### Changed

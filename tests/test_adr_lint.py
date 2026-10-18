@@ -55,3 +55,33 @@ def test_missing_title_and_numbering_starts_where_the_folder_does(tmp_path):
     rc, rep = run_json(mod, [str(tmp_path), "--json"])
     assert [(f["rule"], f["file"]) for f in rep["findings"]] == [("ADR-TITLE", "0010-first.md")]
     assert rep["statuses"]["0011-second.md"] == "Deprecated"
+
+
+def test_a_run_of_missing_numbers_is_one_gap_finding(tmp_path):
+    for n in (1, 2, 9, 12):
+        (tmp_path / f"{n:04d}-adr.md").write_text(f"# {n}. ADR\n\nStatus: accepted\n", encoding="utf-8")
+    rc, rep = run_json(mod, [str(tmp_path), "--json"])
+    gaps = [f["detail"] for f in rep["findings"] if f["rule"] == "ADR-GAP"]
+    assert rc == 1 and gaps == ["no ADRs numbered 0003 to 0008 between 0001 and 0012",
+                                "no ADRs numbered 0010 to 0011 between 0001 and 0012"]
+
+
+def test_empty_or_wrong_folder_warns_and_strict_fails(tmp_path):
+    (tmp_path / "notes.md").write_text("# notes\n", encoding="utf-8")
+    rc, rep = run_json(mod, [str(tmp_path), "--json"])
+    rules = {f["rule"] for f in rep["findings"]}
+    assert rc == 0 and rules == {"ADR-EMPTY", "ADR-NAME"} and rep["adrs"] == 0
+    assert run_main(mod, [str(tmp_path), "--strict"])[0] == 1
+
+
+def test_upper_case_extension_and_bold_status(tmp_path):
+    (tmp_path / "0001-first.MD").write_text("# 1. First\n\n**Status:** Accepted (2026-01-02)\n", encoding="utf-8")
+    rc, rep = run_json(mod, [str(tmp_path), "--json"])
+    assert rc == 0 and rep["adrs"] == 1 and rep["findings"] == []
+
+
+def test_superseded_without_a_replacement_and_non_utf8_text(tmp_path):
+    (tmp_path / "0001-old.md").write_bytes(b"# 1. Old \xff\n\nStatus: superseded\n")
+    (tmp_path / "0002-new.md").write_text("# 2. New\n\nStatus: accepted\n", encoding="utf-8")
+    rc, rep = run_json(mod, [str(tmp_path), "--json"])
+    assert rc == 1 and [f["rule"] for f in rep["findings"]] == ["ADR-SUPERSEDED"]

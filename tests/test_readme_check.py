@@ -55,3 +55,38 @@ def test_plugin_install_in_a_text_block_counts_as_install(tmp_path):
                  encoding="utf-8")
     rc, rep = run_json(mod, [str(p), "--json"])
     assert rep["elements"]["install"]["status"] == "first screen" and rc == 0
+
+
+def test_not_utf8_exits_2_and_empty_file_is_noted(tmp_path):
+    p = tmp_path / "README.md"
+    p.write_bytes(b"\xff\xfe# x\n")
+    rc, _, err = run_main(mod, [str(p)])
+    assert rc == 2 and "not UTF-8" in err
+    p.write_text("", encoding="utf-8")
+    rc, rep = run_json(mod, [str(p), "--json"])
+    assert rc == 1 and rep["score"] == 0 and rep["notes"] == ["the file is empty"]
+
+
+def test_front_matter_and_setext_heading_are_not_the_opening_sentence(tmp_path):
+    p = tmp_path / "README.md"
+    p.write_text("---\ntitle: Tool\nlayout: page\n---\nTool\n====\n\nTool is a linter for YAML files.\n",
+                 encoding="utf-8")
+    _, rep = run_json(mod, [str(p), "--json"])
+    assert rep["elements"]["what"]["line"] == 8
+    assert rep["elements"]["what"]["evidence"] == "Tool is a linter for YAML files."
+    assert rep["screen"]["first_line"] == 5
+
+
+def test_hype_in_inline_code_is_ignored_but_prose_hype_counts(tmp_path):
+    p = tmp_path / "README.md"
+    p.write_text("# x\n\nx is a tool. Pass `--robust` for retries.\n\nIt is a powerful tool.\n", encoding="utf-8")
+    _, rep = run_json(mod, [str(p), "--json"])
+    assert [(h["line"], h["word"]) for h in rep["hype_words"]] == [(5, "powerful")]
+
+
+def test_unclosed_code_fence_is_noted_and_its_install_still_counts(tmp_path):
+    p = tmp_path / "README.md"
+    p.write_text("# x\n\nx is a tool.\n\n```bash\npip install x\n", encoding="utf-8")
+    _, rep = run_json(mod, [str(p), "--json"])
+    assert any("never closed" in n for n in rep["notes"])
+    assert rep["elements"]["install"]["status"] == "first screen"

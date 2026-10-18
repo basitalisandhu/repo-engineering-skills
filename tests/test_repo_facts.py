@@ -41,3 +41,40 @@ def test_text_output_and_errors(tmp_path):
     assert rc == 2
     rc, out, _ = run_main(mod, ["--help"])
     assert rc == 0 and "--top" in out
+
+
+def test_manifests_of_the_wrong_shape_do_not_crash(tmp_path):
+    (tmp_path / "package.json").write_text("[1, 2]", encoding="utf-8")
+    (tmp_path / "pyproject.toml").write_text('project = "x"\ntool = 3\n', encoding="utf-8")
+    rc, rep = run_json(mod, [str(tmp_path), "--json"])
+    assert rc == 0 and rep["entry_points"] == []
+    (tmp_path / "package.json").write_text('{"scripts": ["a"], "bin": ["b"], "name": null}', encoding="utf-8")
+    rc, rep = run_json(mod, [str(tmp_path), "--json"])
+    assert rc == 0 and rep["entry_points"] == []
+
+
+def test_string_bin_uses_package_name_and_gui_scripts_are_listed(tmp_path):
+    (tmp_path / "package.json").write_text('{"name": "tool", "bin": "cli.js"}', encoding="utf-8")
+    (tmp_path / "pyproject.toml").write_text('[project]\nname = "y"\n[project.gui-scripts]\ny-gui = "y.gui:run"\n',
+                                             encoding="utf-8")
+    rc, rep = run_json(mod, [str(tmp_path), "--json"])
+    pairs = {(e["kind"], e["name"], e["target"]) for e in rep["entry_points"]}
+    assert ("npm_bin", "tool", "cli.js") in pairs
+    assert ("gui_script", "y-gui", "y.gui:run") in pairs
+
+
+def test_main_guard_spacing_variants_and_lowercase_dockerfile(tmp_path):
+    (tmp_path / "a.py").write_text('import sys\nif __name__=="__main__":\n    sys.exit(0)\n', encoding="utf-8")
+    (tmp_path / "b.py").write_text("if '__main__' == __name__:\n    pass\n", encoding="utf-8")
+    (tmp_path / "c.py").write_text("x = 'if __name__ == \"__main__\":'\n", encoding="utf-8")
+    (tmp_path / "Dockerfile").write_text('FROM python:3.12\n  entrypoint ["y"]\n', encoding="utf-8")
+    rc, rep = run_json(mod, [str(tmp_path), "--json"])
+    guards = {e["target"] for e in rep["entry_points"] if e["kind"] == "python_main_guard"}
+    assert guards == {"a.py:2", "b.py:1"}
+    docker = [e for e in rep["entry_points"] if e["kind"] == "docker_entrypoint"]
+    assert docker and docker[0]["source"] == "Dockerfile:2"
+
+
+def test_unwritable_out_file_exits_2(tmp_path):
+    rc, out, err = run_main(mod, [str(REPO), "--out", str(tmp_path / "missing" / "facts.json")])
+    assert rc == 2 and "cannot write" in err and "Traceback" not in err
