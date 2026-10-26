@@ -1,0 +1,15 @@
+{
+  "name": "io.github.old-handle/recipes-mcp",
+  "description": "Recipe search and shopping lists",
+  "version": "1.0.1",
+  "repository": {
+    "url": "https://github.com/new-handle/recipes-mcp",
+    "source": "github"
+  },
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://recipes.example.com/mcp"
+    }
+  ]
+}

@@ -4,6 +4,16 @@ All notable changes to this project are documented here. The format follows Keep
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-10-26
+
+### Added
+
+- `mcp-registry-publish-preflight`: `registry_preflight.py` checks an MCP server repository offline before `mcp-publisher publish`: server.json required fields, name format, description and title length, version ranges and `latest`, allowed registry base URLs and OCI hosts, transport types and https remotes, `_meta` keys the registry drops and the 4096-byte publisher-provided limit, npm `mcpName`, the `mcp-name:` marker and its boundary in the README that PyPI, NuGet or crates.io actually shows (following pyproject `readme`), the Dockerfile `io.modelcontextprotocol.server.name` label, MCPB `fileSha256`, version drift against local manifests, and the repository link. An optional DNS TXT or HTTP proof record is checked for format, base64, key size and placement, and the namespace against `--domain` or `--github-owner`. Every rule cites the registry document or validator code it comes from (`references/rules.md`). No network. Subcommand `registry-preflight`.
+
+### Changed
+
+- Version 0.6.0 in `plugin.json`, `marketplace.json`, the dispatcher and the README container examples.
+
 ## [0.5.0] - 2026-10-18
 
 ### Added

@@ -1,0 +1,1 @@
+_mcp-auth.example.com. IN TXT "v=MCPv1; k=ed25519; p=q3b3bFCw0iAImITnSTRhkBfbyI/oR0+1wnMWUNVc12Y="

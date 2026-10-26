@@ -1,0 +1,19 @@
+{
+  "name": "io.github.ada-example/notes-mcp",
+  "description": "Search and tag plain-text notes",
+  "version": "0.9.1",
+  "repository": {
+    "url": "https://github.com/ada-example/notes-mcp",
+    "source": "github"
+  },
+  "packages": [
+    {
+      "registryType": "pypi",
+      "identifier": "notes-mcp",
+      "version": "0.9.1",
+      "transport": {
+        "type": "stdio"
+      }
+    }
+  ]
+}

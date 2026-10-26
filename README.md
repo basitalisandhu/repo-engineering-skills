@@ -2,7 +2,7 @@
 
 **Repository engineering skills for Claude Code: docs checked against the code, audits where every finding cites a line, onboarding guides built from cited facts, and restructure, ADR, hygiene and release checks run by scripts.**
 
-repo-engineering-skills is a Claude Code plugin with twelve skills for maintainers and teams who need to trust what is written about their repository: the README, the docs, the onboarding guide, the audit report, the AGENTS.md, the decision records, the release notes, the branch list and the plan before coding. It exists because generated docs and audits are cheap to produce and hard to check, so each skill pairs the model's work with a standard-library Python script that checks it against the working tree or the git history, instead of asking you to take the text on faith.
+repo-engineering-skills is a Claude Code plugin with thirteen skills for maintainers and teams who need to trust what is written about their repository: the README, the docs, the onboarding guide, the audit report, the AGENTS.md, the decision records, the release notes, the branch list, the plan before coding and the MCP server metadata before publishing. It exists because generated docs and audits are cheap to produce and hard to check, so each skill pairs the model's work with a standard-library Python script that checks it against the working tree or the git history, instead of asking you to take the text on faith.
 
 Common searches it answers: technical due diligence on a codebase, an import dependency graph before a restructure, stale docs, delete stale branches, and review an implementation plan. Bus factor from commit history is not measured.
 
@@ -44,11 +44,11 @@ Generated from the committed fixtures by [`scripts/render_demo.py`](scripts/rend
 The plugin installs as shown above. The skill scripts are also published as one container image on GitHub Packages (linux/amd64 and linux/arm64) for running them without a checkout, for example in CI. The image's entrypoint is `repo-engineering <subcommand> [args]`; mount the files to read at `/work`, which is the working directory:
 
 ```bash
-docker run --rm -v "$PWD:/work" ghcr.io/basitalisandhu/repo-engineering-skills:0.5.0 docs-truth /work --only-failures
-docker run --rm -v "$PWD:/work" ghcr.io/basitalisandhu/repo-engineering-skills:0.5.0 readme-check /work/README.md
-docker run --rm -v "$PWD:/work" ghcr.io/basitalisandhu/repo-engineering-skills:0.5.0 test-gaps /work --top 20
-docker run --rm -v "$PWD:/work" ghcr.io/basitalisandhu/repo-engineering-skills:0.5.0 hygiene /work --sarif /work/hygiene.sarif
-docker run --rm ghcr.io/basitalisandhu/repo-engineering-skills:0.5.0 --help
+docker run --rm -v "$PWD:/work" ghcr.io/basitalisandhu/repo-engineering-skills:0.6.0 docs-truth /work --only-failures
+docker run --rm -v "$PWD:/work" ghcr.io/basitalisandhu/repo-engineering-skills:0.6.0 readme-check /work/README.md
+docker run --rm -v "$PWD:/work" ghcr.io/basitalisandhu/repo-engineering-skills:0.6.0 test-gaps /work --top 20
+docker run --rm -v "$PWD:/work" ghcr.io/basitalisandhu/repo-engineering-skills:0.6.0 hygiene /work --sarif /work/hygiene.sarif
+docker run --rm ghcr.io/basitalisandhu/repo-engineering-skills:0.6.0 --help
 ```
 
 This pack is also part of [claude-skills](https://github.com/basitalisandhu/claude-skills), which holds every skill I maintain as one marketplace: `/plugin marketplace add basitalisandhu/claude-skills`.
@@ -70,16 +70,17 @@ This pack is also part of [claude-skills](https://github.com/basitalisandhu/clau
 | `release-notes` | `release_notes_verify.py` (release-notes-verifier) |
 | `branch-sweep` | `stale_branch_sweep.py` (stale-branch-sweep) |
 | `plan-grill` | `plan_grill.py` (plan-grill) |
+| `registry-preflight` | `registry_preflight.py` (mcp-registry-publish-preflight) |
 
 Every subcommand passes its arguments to the script unchanged, so `repo-engineering <subcommand> --help` shows the same options as the script. Output files land in the mounted folder. The image has no pip dependencies, includes git for `adr` and `release-notes` (it trusts the `/work` mount as a git safe directory), and runs as uid 1000; on Linux, if the mounted folder is not writable by that uid, run the container as your own uid and gid with Docker's user option. From a checkout, `python3 scripts/cli.py` is the same dispatcher.
 
 Each image is signed with cosign (keyless) and has a build provenance attestation and an SPDX SBOM (attached to the GitHub Release). To verify:
 
 ```bash
-cosign verify ghcr.io/basitalisandhu/repo-engineering-skills:0.5.0 \
+cosign verify ghcr.io/basitalisandhu/repo-engineering-skills:0.6.0 \
   --certificate-identity-regexp '^https://github.com/basitalisandhu/repo-engineering-skills/' \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com
-gh attestation verify oci://ghcr.io/basitalisandhu/repo-engineering-skills:0.5.0 --owner basitalisandhu
+gh attestation verify oci://ghcr.io/basitalisandhu/repo-engineering-skills:0.6.0 --owner basitalisandhu
 ```
 
 ## When to use this
@@ -96,6 +97,7 @@ gh attestation verify oci://ghcr.io/basitalisandhu/repo-engineering-skills:0.5.0
 - Do the release notes match the commits between two tags, and does every version field match the tag? `release-notes-verifier`
 - Which branches are merged, idle or still in review, who last touched each, and what are the delete commands to review? `stale-branch-sweep`
 - Is this implementation plan ready to build: scope, interfaces, data, failure modes, rollout, tests and open questions answered? `plan-grill`
+- Will this MCP server publish to the official MCP Registry, or why did `mcp-publisher publish` reject it? `mcp-registry-publish-preflight`
 
 ## Skills
 
@@ -113,8 +115,26 @@ gh attestation verify oci://ghcr.io/basitalisandhu/repo-engineering-skills:0.5.0
 | `release-notes-verifier` | "check the changelog before we tag", "are the release notes complete?" | `release_notes_verify.py` | notes with no matching commit, commits with no note (chores excluded by pattern), version fields that disagree with the tag, missing compare links |
 | `stale-branch-sweep` | "which branches can we delete?", "clean up old branches" | `stale_branch_sweep.py` | one status per remote branch from saved gh and git exports (merged, including squash-merged PRs; stale after N days; open PR; protected; base) with the last committer as owner, and `git push --delete` commands that are printed for review, never run |
 | `plan-grill` | "grill this plan", "is this ready to build?" | `plan_grill.py` | a fixed question set put to the author, then a check of the Markdown plan for the seven required sections, placeholders, a missing rollback, failure modes without a list, tests without a kind, and questions with no owner or answer, each with its line |
+| `mcp-registry-publish-preflight` | "will this publish to the MCP registry?", an ownership error from `mcp-publisher` | `registry_preflight.py` | server.json, package.json `mcpName`, the README PyPI, NuGet or crates.io shows (`mcp-name:` marker and its boundary), the Dockerfile label and an optional DNS or HTTP proof record checked offline against the registry's documented rules, each finding naming its source document |
 
 Every script reads files (and, for the history-based skills, runs read-only git commands), needs no network, prints a table by default and JSON with `--json`, and uses exit codes 0 (clean), 1 (findings) and 2 (bad input), so each one can gate CI.
+
+Real output of `mcp-registry-publish-preflight` on a committed sample server whose pyproject.toml points PyPI at a README without the ownership marker (exit code 1):
+
+```bash
+python3 plugins/repo-engineering/skills/mcp-registry-publish-preflight/scripts/registry_preflight.py tests/fixtures/registry_preflight/pypi_wrong_readme
+```
+
+```text
+registry preflight: server.json (io.github.ada-example/notes-mcp)
+
+SEV    RULE                    WHERE                DETAIL
+error  marker-missing          docs/PYPI.md         no 'mcp-name: io.github.ada-example/notes-mcp' in docs/PYPI.md, which the registry reads for pypi ownership
+error  marker-in-wrong-readme  README.md:5          the marker is in README.md, but pyproject.toml [project].readme makes docs/PYPI.md the PyPI description
+warn   version-mismatch        packages[0].version  server.json lists 0.9.1, pyproject.toml has 0.9.0; the registry reads the README of the exact listed version
+
+2 error(s), 1 warning(s), 0 not checked; files read: server.json, pyproject.toml, docs/PYPI.md, README.md
+```
 
 ## How this differs from what you may already have
 

@@ -15,7 +15,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-__version__ = "0.5.0"
+__version__ = "0.6.0"
 
 PROG = "repo-engineering"
 ROOT = Path(__file__).resolve().parents[1]
@@ -97,6 +97,11 @@ COMMANDS: dict[str, tuple[str, str, str]] = {
         "plan-grill",
         "plan_grill.py",
         "Check an implementation plan for required sections and unanswered questions",
+    ),
+    "registry-preflight": (
+        "mcp-registry-publish-preflight",
+        "registry_preflight.py",
+        "Check an MCP server's server.json and package files against the MCP Registry's publish rules",
     ),
 }
 

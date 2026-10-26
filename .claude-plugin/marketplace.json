@@ -1,20 +1,20 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "repo-engineering-skills",
-  "description": "Claude Code skills for repository audits and documentation: docs checked against the code, audits whose findings must cite a resolvable line, agent context files that hold only what code cannot say, README first-screen checks, test gap ranking, onboarding guides built from cited facts, import-graph restructure plans, ADRs mined from git history, offline hygiene checks, release notes checked against commits, a stale-branch sweep and an implementation plan check.",
+  "description": "Claude Code skills for repository audits and documentation: docs checked against the code, audits whose findings must cite a resolvable line, agent context files that hold only what code cannot say, README first-screen checks, test gap ranking, onboarding guides built from cited facts, import-graph restructure plans, ADRs mined from git history, offline hygiene checks, release notes checked against commits, a stale-branch sweep, an implementation plan check and an MCP Registry publish preflight.",
   "owner": {
     "name": "Muhammad Basit Ali",
     "url": "https://github.com/basitalisandhu"
   },
   "metadata": {
-    "version": "0.5.0"
+    "version": "0.6.0"
   },
   "plugins": [
     {
       "name": "repo-engineering",
       "source": "./plugins/repo-engineering",
-      "description": "Twelve skills, each with a tested standard-library script: docs-truth-check, cited-codebase-audit, agent-context-writer, readme-who-what-why, untested-entry-points, repo-onboarding-guide, restructure-planner, adr-miner, repo-hygiene-bundle, release-notes-verifier, stale-branch-sweep and plan-grill.",
-      "version": "0.5.0",
+      "description": "Thirteen skills, each with a tested standard-library script: docs-truth-check, cited-codebase-audit, agent-context-writer, readme-who-what-why, untested-entry-points, repo-onboarding-guide, restructure-planner, adr-miner, repo-hygiene-bundle, release-notes-verifier, stale-branch-sweep, plan-grill and mcp-registry-publish-preflight.",
+      "version": "0.6.0",
       "author": {
         "name": "Muhammad Basit Ali",
         "url": "https://github.com/basitalisandhu"
@@ -22,7 +22,7 @@
       "homepage": "https://github.com/basitalisandhu/repo-engineering-skills",
       "repository": "https://github.com/basitalisandhu/repo-engineering-skills",
       "license": "MIT",
-      "keywords": ["documentation", "docs-drift", "codebase-audit", "agents-md", "claude-md", "readme", "test-gaps", "onboarding", "adr", "restructure", "hygiene", "release-notes"],
+      "keywords": ["documentation", "docs-drift", "codebase-audit", "agents-md", "claude-md", "readme", "test-gaps", "onboarding", "adr", "restructure", "hygiene", "release-notes", "mcp-registry"],
       "category": "development",
       "tags": ["documentation", "audit", "repository", "testing", "architecture", "release"]
     }

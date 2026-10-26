@@ -1,0 +1,8 @@
+{
+  "name": "@ada-example/weather-mcp",
+  "version": "1.4.0",
+  "mcpName": "io.github.ada-example/weather-mcp",
+  "bin": {
+    "weather-mcp": "dist/index.js"
+  }
+}

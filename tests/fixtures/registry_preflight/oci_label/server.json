@@ -1,0 +1,18 @@
+{
+  "name": "io.github.ada-example/calendar-mcp",
+  "description": "Read and create calendar events",
+  "version": "3.1.0",
+  "repository": {
+    "url": "https://github.com/ada-example/calendar-mcp",
+    "source": "github"
+  },
+  "packages": [
+    {
+      "registryType": "oci",
+      "identifier": "ghcr.io/ada-example/calendar-mcp:3.1.0",
+      "transport": {
+        "type": "stdio"
+      }
+    }
+  ]
+}
