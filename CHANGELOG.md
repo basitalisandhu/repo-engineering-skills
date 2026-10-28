@@ -4,6 +4,10 @@ All notable changes to this project are documented here. The format follows Keep
 
 ## [Unreleased]
 
+### Added
+
+- `untested-entry-points`: `--methods` also lists public methods of public Python classes as their own units, so a class that is mentioned in a test but has untested methods shows up. Thanks @AnuragR3k.
+
 ## [0.6.0] - 2026-10-26
 
 ### Added
