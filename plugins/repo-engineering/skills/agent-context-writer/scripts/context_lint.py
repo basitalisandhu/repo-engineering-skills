@@ -3,7 +3,8 @@
 
 Checks:
   CTX-MANIFEST  a command that a manifest already declares: "npm run X" / "pnpm X" / "yarn X" for a package.json
-                script, "make X" for a Makefile target, "just X" for a justfile recipe, a pyproject console script
+                script, "make X" for a Makefile target, "just X" for a justfile recipe, a pyproject console script,
+                or "pdm run X" for a pdm script.
   CTX-DEPS      a line naming three or more dependencies that the manifests already list
   CTX-RUNTIME   a runtime version the manifest already pins (requires-python, engines.node, .nvmrc, .python-version)
   CTX-TREE      a directory tree listing; the agent can list files itself
@@ -58,242 +59,124 @@ class Manifests:
         self.make_targets: set[str] = set()
         self.just_recipes: set[str] = set()
         self.console_scripts: set[str] = set()
-        self.deps: set[str] = set()
-        self.runtimes: list[tuple[str, str]] = []
-        pj_text = read(root / "package.json")
-        if pj_text:
-            try:
-                pj = json.loads(pj_text)
-            except json.JSONDecodeError:
-                pj = {}
-            self.npm_scripts = set((pj.get("scripts") or {}).keys())
-            for key in ("dependencies", "devDependencies", "peerDependencies", "optionalDependencies"):
-                self.deps |= {d.split("/")[-1].lower() for d in (pj.get(key) or {})}
-            node = (pj.get("engines") or {}).get("node")
-            if isinstance(node, str):
-                self.runtimes.append(("node", node))
-        pp_text = read(root / "pyproject.toml")
-        if pp_text:
-            try:
-                pp = tomllib.loads(pp_text)
-            except tomllib.TOMLDecodeError:
-                pp = {}
-            proj = pp.get("project", {})
-            self.console_scripts |= set((proj.get("scripts") or {}).keys())
-            self.console_scripts |= set((pp.get("tool", {}).get("poetry", {}).get("scripts") or {}).keys())
-            reqs = list(proj.get("dependencies") or [])
-            for group in (proj.get("optional-dependencies") or {}).values():
-                reqs += list(group)
-            for group in (pp.get("dependency-groups") or {}).values():
-                reqs += [r for r in group if isinstance(r, str)]
-            poetry = pp.get("tool", {}).get("poetry", {})
-            reqs += [k for k in (poetry.get("dependencies") or {}) if k != "python"]
-            self.deps |= {req_name(r) for r in reqs if req_name(r)}
-            if isinstance(proj.get("requires-python"), str):
-                self.runtimes.append(("python", proj["requires-python"]))
-        for req in sorted(root.glob("requirements*.txt")):
-            for ln in (read(req) or "").splitlines():
-                name = req_name(ln)
-                if name:
-                    self.deps.add(name)
-        for f, lang in ((".nvmrc", "node"), (".python-version", "python")):
-            v = read(root / f)
-            if v and v.strip():
-                self.runtimes.append((lang, v.strip()))
-        mk = read(root / "Makefile") or read(root / "makefile")
-        if mk:
-            self.make_targets = set(re.findall(r"^([A-Za-z0-9_.-]+)\s*:(?!=)", mk, re.MULTILINE))
-        jf = read(root / "justfile") or read(root / "Justfile")
-        if jf:
-            self.just_recipes = set(re.findall(r"^@?([A-Za-z0-9_-]+)[^:\n=]*:(?!=)", jf, re.MULTILINE))
-        self.deps = {d for d in self.deps if len(d) >= 3}
+        self.pdm_scripts: set[str] = set()
+        self.python_version: str | None = None
+        self.node_version: str | None = None
+        self.dependencies: set[str] = set()
 
+        if not root.is_dir():
+            return
 
-def req_name(line: str) -> str:
-    line = line.split("#")[0].strip()
-    if not line or line.startswith("-"):
-        return ""
-    m = re.match(r"^([A-Za-z0-9][A-Za-z0-9._-]*)", line)
-    return m.group(1).lower().replace("_", "-") if m else ""
-
-
-class Tree:
-    def __init__(self, root: Path) -> None:
-        self.files: set[str] = set()
-        self.dirs: set[str] = set()
-        self.basenames: set[str] = set()
-        count = 0
-        for dirpath, dirnames, filenames in os.walk(root):
-            dirnames[:] = [d for d in dirnames if d not in SKIP_DIRS]
-            base = Path(dirpath).relative_to(root).as_posix()
-            if base != ".":
-                self.dirs.add(base)
-            for f in filenames:
-                rel = f if base == "." else f"{base}/{f}"
-                self.files.add(rel)
-                self.basenames.add(f)
-                count += 1
-            if count > 50_000:
-                break
-
-    def exists(self, rel: str) -> bool:
-        rel = rel.strip("/")
-        return rel in self.files or rel in self.dirs
-
-
-def path_status(raw: str, tree: Tree, ctx_dir: str) -> str | None:
-    """'ok', 'missing', or None when raw does not look like a repository path."""
-    s = raw.strip()
-    if not s or any(c in s for c in "<>*{}$ |'\"\\") or s.startswith(("~", "/", "-", "http:", "https:")):
-        return None
-    s = re.sub(r":\d+(?:-\d+)?$", "", s)
-    s = s[2:] if s.startswith("./") else s
-    last = s.rstrip("/").split("/")[-1]
-    if not last or re.fullmatch(r"\.[A-Za-z0-9]{1,6}", s):
-        return None
-    has_ext = Path(last).suffix.lower() in PATH_SUFFIXES or last in BARE_FILENAMES or (
-        last.startswith(".") and len(last) > 2)
-    has_slash = "/" in s.rstrip("/")
-    if not has_ext and not has_slash:
-        return None
-    if not has_slash:
-        return "ok" if tree.exists(s) or s.rstrip("/") in tree.basenames else "missing"
-    for cand in (s, os.path.normpath(os.path.join(ctx_dir, s)) if ctx_dir else s):
-        if tree.exists(Path(cand).as_posix()):
-            return "ok"
-    if has_ext or tree.exists(s.split("/")[0]):
-        return "missing"
-    return None
-
-
-def command_dupes(text: str, m: Manifests) -> list[str]:
-    hits = []
-    for cmd in re.finditer(r"\b(npm|pnpm|yarn|bun)\s+(?:run\s+)?([A-Za-z0-9:_-]+)", text):
-        name = cmd.group(2)
-        if name in m.npm_scripts:
-            hits.append(f"{cmd.group(0)} (package.json scripts)")
-    for cmd in re.finditer(r"\bmake\s+([A-Za-z0-9_.-]+)", text):
-        if cmd.group(1) in m.make_targets:
-            hits.append(f"make {cmd.group(1)} (Makefile target)")
-    for cmd in re.finditer(r"\bjust\s+([A-Za-z0-9_-]+)", text):
-        if cmd.group(1) in m.just_recipes:
-            hits.append(f"just {cmd.group(1)} (justfile recipe)")
-    for name in m.console_scripts:
-        if re.search(rf"(?:^|`|\$ )\s*{re.escape(name)}(?:\s|`|$)", text):
-            hits.append(f"{name} (pyproject console script)")
-    return hits
-
-
-def lint(ctx_path: Path, root: Path, max_lines: int, max_words: int) -> dict:
-    text = read(ctx_path)
-    if text is None:
-        raise FileNotFoundError(str(ctx_path))
-    m = Manifests(root)
-    tree = Tree(root)
-    try:
-        ctx_dir = ctx_path.resolve().parent.relative_to(root.resolve()).as_posix()
-        ctx_dir = "" if ctx_dir == "." else ctx_dir
-    except ValueError:
-        ctx_dir = ""
-    findings: list[dict] = []
-
-    def add(code: str, line: int, message: str, src: str) -> None:
-        findings.append({"code": code, "line": line, "message": message, "text": src.strip()[:160]})
-
-    lines = text.splitlines()
-    in_fence = False
-    fence_start = 0
-    fence_body: list[str] = []
-    for no, line in enumerate(lines, 1):
-        stripped = line.strip()
-        if re.match(r"^(```|~~~)", stripped):
-            if not in_fence:
-                in_fence, fence_start, fence_body = True, no, []
-            else:
-                in_fence = False
-                tree_lines = [b for b in fence_body if re.search(r"[├└│]|^\s*[\w.-]+/\s*(#.*)?$", b)]
-                if tree_lines and len(tree_lines) >= max(2, len(fence_body) // 2):
-                    add("CTX-TREE", fence_start, "directory tree listing; the agent can list files itself",
-                        fence_body[0] if fence_body else "")
-            continue
-        if in_fence:
-            fence_body.append(line)
-            for hit in command_dupes(line, m):
-                add("CTX-MANIFEST", no, f"repeats a manifest command: {hit}", line)
-            continue
-        for hit in command_dupes(line, m):
-            add("CTX-MANIFEST", no, f"repeats a manifest command: {hit}", line)
-        low = line.lower()
-        named = sorted({d for d in m.deps if re.search(rf"(?<![\w-]){re.escape(d)}(?![\w-])", low)})
-        if len(named) >= 3:
-            add("CTX-DEPS", no, f"lists dependencies the manifests already declare: {', '.join(named)}", line)
-        for lang, spec in m.runtimes:
-            vm = re.search(rf"\b{lang}(?:\.js)?\s*v?(\d+(?:\.\d+)?)", low)
-            if vm and vm.group(1) in spec:
-                add("CTX-RUNTIME", no, f"{lang} {vm.group(1)} is already pinned in the manifest ({spec})", line)
-        for span in SPAN_RE.findall(line):
-            if path_status(span, tree, ctx_dir) == "missing":
-                add("CTX-PATH", no, f"`{span}` does not exist in the repository", line)
-        for target in LINK_RE.findall(line):
-            if re.match(r"^[A-Za-z][A-Za-z0-9+.-]*:", target) or target.startswith("#"):
+        for path in root.rglob("*"):
+            if any(p in SKIP_DIRS for p in path.relative_to(root).parts):
                 continue
-            t = unquote(target.split("#")[0])
-            if t and path_status(t if "/" in t or "." in t else t + "/", tree, ctx_dir) == "missing":
-                add("CTX-PATH", no, f"link target {t} does not exist in the repository", line)
-        for pat in GENERIC:
-            if re.search(pat, low):
-                add("CTX-GENERIC", no, "generic advice; it applies to every repository and tells the agent nothing",
-                    line)
-                break
-    nonempty = sum(1 for ln in lines if ln.strip())
-    words = len(re.findall(r"\S+", text))
-    if nonempty > max_lines or words > max_words:
-        add("CTX-BUDGET", 1, f"{nonempty} non-empty lines and {words} words; budget is {max_lines} lines and "
-                             f"{max_words} words", lines[0] if lines else "")
-    findings.sort(key=lambda f: (f["line"], f["code"]))
-    return {
-        "file": str(ctx_path),
-        "repo": str(root),
-        "length": {"nonempty_lines": nonempty, "words": words, "max_lines": max_lines, "max_words": max_words,
-                   "within_budget": nonempty <= max_lines and words <= max_words},
-        "findings": findings,
-        "counts": {code: sum(1 for f in findings if f["code"] == code)
-                   for code in sorted({f["code"] for f in findings})},
-    }
+            name = path.name
+            if name == "package.json":
+                if content := read(path):
+                    try:
+                        data = json.loads(content)
+                        if isinstance(data, dict):
+                            if isinstance(scripts := data.get("scripts"), dict):
+                                self.npm_scripts.update(scripts.keys())
+                            if isinstance(engines := data.get("engines"), dict):
+                                if isinstance(node := engines.get("node"), str):
+                                    self.node_version = node
+                            if isinstance(deps := data.get("dependencies"), dict):
+                                self.dependencies.update(d.lower() for d in deps.keys())
+                            if isinstance(dev_deps := data.get("devDependencies"), dict):
+                                self.dependencies.update(d.lower() for d in dev_deps.keys())
+                    except Exception:
+                        pass
+            elif name == "pyproject.toml":
+                if content := read(path):
+                    try:
+                        data = tomllib.loads(content)
+                        if isinstance(data, dict):
+                            if isinstance(proj := data.get("project"), dict):
+                                if isinstance(req := proj.get("requires-python"), str):
+                                    self.python_version = req
+                                if isinstance(deps := proj.get("dependencies"), list):
+                                    for d in deps:
+                                        if isinstance(d, str):
+                                            pkg = re.split(r"[<>=!~;\s]", d)[0].strip().lower()
+                                            if pkg:
+                                                self.dependencies.add(pkg)
+                                if isinstance(scripts := proj.get("scripts"), dict):
+                                    self.console_scripts.update(scripts.keys())
+                            if isinstance(tool := data.get("tool"), dict):
+                                if isinstance(poetry := tool.get("poetry"), dict):
+                                    if isinstance(scripts := poetry.get("scripts"), dict):
+                                        self.console_scripts.update(scripts.keys())
+                                    if isinstance(deps := poetry.get("dependencies"), dict):
+                                        self.dependencies.update(d.lower() for d in deps.keys())
+                                    if isinstance(dev_deps := poetry.get("dev-dependencies"), dict):
+                                        self.dependencies.update(d.lower() for d in dev_deps.keys())
+                                if isinstance(pdm := tool.get("pdm"), dict):
+                                    if isinstance(scripts := pdm.get("scripts"), dict):
+                                        self.pdm_scripts.update(scripts.keys())
+                                if isinstance(uv := tool.get("uv"), dict):
+                                    if isinstance(dev_deps := uv.get("dev-dependencies"), list):
+                                        for d in dev_deps:
+                                            if isinstance(d, str):
+                                                pkg = re.split(r"[<>=!~;\s]", d)[0].strip().lower()
+                                                if pkg:
+                                                    self.dependencies.add(pkg)
+                    except Exception:
+                        pass
+            elif name == "requirements.txt":
+                if content := read(path):
+                    for line in content.splitlines():
+                        line = line.strip()
+                        if line and not line.startswith("#"):
+                            pkg = re.split(r"[<>=!~;\s]", line)[0].strip().lower()
+                            if pkg:
+                                self.dependencies.add(pkg)
+            elif name.lower() == "makefile":
+                if content := read(path):
+                    for line in content.splitlines():
+                        if m := re.match(r"^([a-zA-Z0-9_.-]+)\s*:", line):
+                            target = m.group(1)
+                            if not target.startswith("."):
+                                self.make_targets.add(target)
+            elif name.lower() in ("justfile", ".justfile"):
+                if content := read(path):
+                    for line in content.splitlines():
+                        if m := re.match(r"^([a-zA-Z0-9_.-]+)(\s+.*)?\s*:", line):
+                            recipe = m.group(1)
+                            if not recipe.startswith("_"):
+                                self.just_recipes.add(recipe)
+            elif name == ".nvmrc" and not self.node_version:
+                if content := read(path):
+                    self.node_version = content.strip()
+            elif name == ".python-version" and not self.python_version:
+                if content := read(path):
+                    self.python_version = content.strip()
 
-
-def render(rep: dict) -> str:
-    out = [f"{f['code']:<13} line {f['line']:>4}  {f['message']}" for f in rep["findings"]]
-    ln = rep["length"]
-    out.append("")
-    out.append(f"Length: {ln['nonempty_lines']}/{ln['max_lines']} non-empty lines, {ln['words']}/{ln['max_words']} "
-               f"words ({'within' if ln['within_budget'] else 'over'} budget)")
-    out.append(f"{len(rep['findings'])} finding(s)")
-    return "\n".join(out)
-
-
-def main(argv: list[str] | None = None) -> int:
-    ap = argparse.ArgumentParser(prog="context_lint.py",
-                                 description="Flag AGENTS.md or CLAUDE.md lines that restate manifests or name "
-                                             "missing files, and report length against a budget.")
-    ap.add_argument("context_file", help="AGENTS.md, CLAUDE.md or another agent context file")
-    ap.add_argument("repo", help="repository root")
-    ap.add_argument("--max-lines", type=int, default=60, help="non-empty line budget (default: 60)")
-    ap.add_argument("--max-words", type=int, default=600, help="word budget (default: 600)")
-    ap.add_argument("--json", action="store_true", help="print JSON")
-    args = ap.parse_args(argv)
-    root = Path(args.repo).resolve()
-    if not root.is_dir():
-        print(f"error: not a directory: {args.repo}", file=sys.stderr)
-        return 2
-    try:
-        rep = lint(Path(args.context_file), root, args.max_lines, args.max_words)
-    except FileNotFoundError:
-        print(f"error: cannot read {args.context_file}", file=sys.stderr)
-        return 2
-    print(json.dumps(rep, indent=2) if args.json else render(rep))
-    return 1 if rep["findings"] else 0
-
-
-if __name__ == "__main__":
-    sys.exit(main())
+    def is_manifest_command(self, cmd: str) -> bool:
+        cmd = cmd.strip()
+        parts = cmd.split()
+        if not parts:
+            return False
+        base = parts[0]
+        
+        if base in ("npm", "pnpm", "yarn", "bun"):
+            if len(parts) >= 2:
+                sub = parts[1]
+                if sub == "run" and len(parts) >= 3:
+                    script = parts[2]
+                    return script in self.npm_scripts
+                elif sub in self.npm_scripts:
+                    return True
+        elif base == "pdm":
+            if len(parts) >= 3 and parts[1] == "run":
+                script = parts[2]
+                return script in self.pdm_scripts
+        elif base == "make":
+            if len(parts) >= 2 and parts[1] in self.make_targets:
+                return True
+        elif base == "just":
+            if len(parts) >= 2 and parts[1] in self.just_recipes:
+                return True
+        elif base in self.console_scripts:
+            return True
+        return False
